@@ -1,0 +1,166 @@
+<main class="signup-page">
+  <section class="signup-story" aria-label="Bienvenida para anfitriones">
+    <p class="story-label"><span></span> TU ESPACIO, UNA NUEVA HISTORIA</p>
+    <div>
+      <h2>Abre las puertas<br />a algo bueno.</h2>
+      <p class="story-description">
+        Comparte tu espacio con viajeros y recibe huéspedes que buscan sentirse como en casa.
+      </p>
+    </div>
+  </section>
+
+  <form class="signup-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <header class="form-heading">
+      <p class="form-eyebrow">REGISTRO DE ANFITRIÓN</p>
+      <h1>Crea tu cuenta</h1>
+      <p class="form-description">
+        Necesitamos algunos datos adicionales para verificar tu identidad y cuidar la comunidad.
+      </p>
+    </header>
+
+    <div class="field-row">
+      <div class="form-field">
+        <label for="nombres">Nombres</label>
+        <input
+          id="nombres"
+          type="text"
+          formControlName="nombres"
+          placeholder="Tus nombres"
+          autocomplete="given-name"
+        />
+        @if (form.controls.nombres.touched && form.controls.nombres.invalid) {
+          <small class="field-error">Ingresa tus nombres (mínimo 2 caracteres).</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="apellidos">Apellidos</label>
+        <input
+          id="apellidos"
+          type="text"
+          formControlName="apellidos"
+          placeholder="Tus apellidos"
+          autocomplete="family-name"
+        />
+        @if (form.controls.apellidos.touched && form.controls.apellidos.invalid) {
+          <small class="field-error">Ingresa tus apellidos (mínimo 2 caracteres).</small>
+        }
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="cedula">Número de cédula</label>
+      <input
+        id="cedula"
+        type="text"
+        inputmode="numeric"
+        formControlName="cedula"
+        placeholder="Número de documento"
+        autocomplete="off"
+      />
+      @if (form.controls.cedula.touched && form.controls.cedula.invalid) {
+        <small class="field-error">Ingresa una cédula válida, solo con números.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="direccion">Dirección de residencia</label>
+      <input
+        id="direccion"
+        type="text"
+        formControlName="direccion"
+        placeholder="Calle, carrera, número y complemento"
+        autocomplete="street-address"
+      />
+      @if (form.controls.direccion.touched && form.controls.direccion.invalid) {
+        <small class="field-error">Ingresa una dirección válida.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="telefono">Número de teléfono</label>
+      <input
+        id="telefono"
+        type="tel"
+        formControlName="telefono"
+        placeholder="+57 300 123 4567"
+        autocomplete="tel"
+      />
+      @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
+        <small class="field-error">Ingresa un número de teléfono válido.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="correo">Correo electrónico</label>
+      <input
+        id="correo"
+        type="email"
+        formControlName="correo"
+        placeholder="tu@correo.com"
+        autocomplete="email"
+      />
+      @if (form.controls.correo.touched && form.controls.correo.invalid) {
+        <small class="field-error">Ingresa un correo válido.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="fechaNacimiento">Fecha de nacimiento</label>
+      <input
+        id="fechaNacimiento"
+        type="date"
+        formControlName="fechaNacimiento"
+        [max]="maxBirthDate"
+        autocomplete="bday"
+      />
+      @if (form.controls.fechaNacimiento.touched && form.controls.fechaNacimiento.invalid) {
+        @if (form.controls.fechaNacimiento.hasError('required')) {
+          <small class="field-error">Ingresa tu fecha de nacimiento.</small>
+        } @else if (form.controls.fechaNacimiento.hasError('underage')) {
+          <small class="field-error">Debes tener al menos 18 años para crear una cuenta.</small>
+        } @else {
+          <small class="field-error">Ingresa una fecha de nacimiento válida.</small>
+        }
+      }
+    </div>
+
+    <div class="field-row">
+      <div class="form-field">
+        <label for="contrasenia">Contraseña</label>
+        <input
+          id="contrasenia"
+          type="password"
+          formControlName="contrasenia"
+          placeholder="Mínimo 8 caracteres"
+          autocomplete="new-password"
+        />
+        @if (form.controls.contrasenia.touched && form.controls.contrasenia.invalid) {
+          <small class="field-error">Usa al menos 8 caracteres.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="confirmarContrasenia">Verifica tu contraseña</label>
+        <input
+          id="confirmarContrasenia"
+          type="password"
+          formControlName="confirmarContrasenia"
+          placeholder="Repite la contraseña"
+          autocomplete="new-password"
+        />
+        @if (form.controls.confirmarContrasenia.touched && form.controls.confirmarContrasenia.invalid) {
+          <small class="field-error">Confirma tu contraseña.</small>
+        } @else if (form.controls.confirmarContrasenia.touched && form.hasError('passwordMismatch')) {
+          <small class="field-error">Las contraseñas no coinciden.</small>
+        }
+      </div>
+    </div>
+
+    <button class="submit-button" type="submit">Crear cuenta de anfitrión</button>
+    <p class="host-prompt">
+      ¿Solo quieres alojarte? <a routerLink="/registro">Crear cuenta de viajero</a>
+    </p>
+    <p class="form-footer">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
+  </form>
+</main>

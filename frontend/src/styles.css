@@ -1,1 +1,47 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  color-scheme: light;
+  --pantone-transparent-yellow: #f5efc6;
+  --pantone-sceptre-red: #4d0e12;
+  --pantone-cerulean-blue: #a5bcd6;
+  --pantone-potting-soil: #4a2e27;
+  --pantone-java-brown: #231815;
+
+  --color-page: var(--pantone-cerulean-blue);
+  --color-surface: var(--pantone-transparent-yellow);
+  --color-surface-raised: #fbf8e9;
+  --color-primary: var(--pantone-sceptre-red);
+  --color-secondary: var(--pantone-cerulean-blue);
+  --color-text: var(--pantone-java-brown);
+  --color-text-muted: var(--pantone-potting-soil);
+  --color-border: rgba(74, 46, 39, 0.22);
+  --color-focus: rgba(165, 188, 214, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--color-page);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: system-ui, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}

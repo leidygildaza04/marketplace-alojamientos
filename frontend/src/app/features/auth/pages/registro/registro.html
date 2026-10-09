@@ -1,0 +1,138 @@
+<main class="signup-page">
+  <section class="signup-story" aria-label="Bienvenida">
+    <p class="story-label"><span></span> UN BUEN LUGAR PARA EMPEZAR</p>
+    <div>
+      <h2>Quédate con<br />lo bueno.</h2>
+      <p class="story-description">
+        Crea tu cuenta y encuentra espacios que se sienten como hechos para ti.
+      </p>
+    </div>
+  </section>
+
+  <form class="signup-card" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <header class="form-heading">
+      <p class="form-eyebrow">TU PRÓXIMA ESTANCIA TE ESPERA</p>
+      <h1>Crea tu cuenta</h1>
+      <p class="form-description">
+        Unos datos y ya estás más cerca de tu próximo destino.
+      </p>
+    </header>
+
+    <div class="field-row">
+      <div class="form-field">
+        <label for="nombres">Nombres</label>
+        <input
+          id="nombres"
+          type="text"
+          formControlName="nombres"
+          placeholder="Tus nombres"
+          autocomplete="given-name"
+        />
+        @if (form.controls.nombres.touched && form.controls.nombres.invalid) {
+          <small class="field-error">Ingresa tus nombres (mínimo 2 caracteres).</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="apellidos">Apellidos</label>
+        <input
+          id="apellidos"
+          type="text"
+          formControlName="apellidos"
+          placeholder="Tus apellidos"
+          autocomplete="family-name"
+        />
+        @if (form.controls.apellidos.touched && form.controls.apellidos.invalid) {
+          <small class="field-error">Ingresa tus apellidos (mínimo 2 caracteres).</small>
+        }
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="telefono">Número de teléfono</label>
+      <input
+        id="telefono"
+        type="tel"
+        formControlName="telefono"
+        placeholder="+57 300 123 4567"
+        autocomplete="tel"
+      />
+      @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
+        <small class="field-error">Ingresa un número de teléfono válido.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="correo">Correo electrónico</label>
+      <input
+        id="correo"
+        type="email"
+        formControlName="correo"
+        placeholder="tu@correo.com"
+        autocomplete="email"
+      />
+      @if (form.controls.correo.touched && form.controls.correo.invalid) {
+        <small class="field-error">Ingresa un correo válido.</small>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="fechaNacimiento">Fecha de nacimiento</label>
+      <input
+        id="fechaNacimiento"
+        type="date"
+        formControlName="fechaNacimiento"
+        [max]="maxBirthDate"
+        autocomplete="bday"
+      />
+      @if (form.controls.fechaNacimiento.touched && form.controls.fechaNacimiento.invalid) {
+        @if (form.controls.fechaNacimiento.hasError('required')) {
+          <small class="field-error">Ingresa tu fecha de nacimiento.</small>
+        } @else if (form.controls.fechaNacimiento.hasError('underage')) {
+          <small class="field-error">Debes tener al menos 18 años para crear una cuenta.</small>
+        } @else {
+          <small class="field-error">Ingresa una fecha de nacimiento válida.</small>
+        }
+      }
+    </div>
+
+    <div class="field-row">
+      <div class="form-field">
+        <label for="contrasenia">Contraseña</label>
+        <input
+          id="contrasenia"
+          type="password"
+          formControlName="contrasenia"
+          placeholder="Mínimo 8 caracteres"
+          autocomplete="new-password"
+        />
+        @if (form.controls.contrasenia.touched && form.controls.contrasenia.invalid) {
+          <small class="field-error">Usa al menos 8 caracteres.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="confirmarContrasenia">Verifica tu contraseña</label>
+        <input
+          id="confirmarContrasenia"
+          type="password"
+          formControlName="confirmarContrasenia"
+          placeholder="Repite la contraseña"
+          autocomplete="new-password"
+        />
+        @if (form.controls.confirmarContrasenia.touched && form.controls.confirmarContrasenia.invalid) {
+          <small class="field-error">Confirma tu contraseña.</small>
+        } @else if (form.controls.confirmarContrasenia.touched && form.hasError('passwordMismatch')) {
+          <small class="field-error">Las contraseñas no coinciden.</small>
+        }
+      </div>
+    </div>
+
+    <button class="submit-button" type="submit">Crear cuenta</button>
+    <p class="host-prompt">
+      ¿Quieres compartir tu espacio?
+      <a routerLink="/registro-anfitrion">Crear cuenta de anfitrión</a>
+    </p>
+    <p class="form-footer">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
+  </form>
+</main>
