@@ -1,6 +1,6 @@
 # Flujo de trabajo
 
-Historia Jira → branch → commits → Pull Request → GitHub Actions → pruebas → SonarCloud → revisión → merge
+Historia Jira → branch → commits → Pull Request → GitHub Actions → pruebas → SonarCloud Quality Gate → revisión → merge
 
 ## Ramas
 
@@ -22,6 +22,8 @@ SCRUM-14 agrega endpoint de registro con selección de rol
 SCRUM-14 agrega pruebas de correo duplicado
 ```
 
+Cada integrante usa su propio nombre y el correo asociado a su cuenta de GitHub, para que la autoría de cada historia coincida con la persona asignada en Jira.
+
 ## Pull Requests
 
 1. Usar la plantilla del repositorio y poner la historia de Jira en el título.
@@ -29,8 +31,8 @@ SCRUM-14 agrega pruebas de correo duplicado
 3. Conseguir al menos una revisión de otro integrante del equipo.
 4. Resolver los comentarios antes de hacer merge.
 
-## Configuración pendiente en GitHub
+## Configuración de GitHub
 
-- Proteger `main`: exigir PR, 1 aprobación y que pasen los checks `Backend` y `Frontend`.
-- Agregar el secreto `SONAR_TOKEN` en Settings → Secrets and variables → Actions.
-- Poner `sonar.organization` y `sonar.projectKey` reales en el `pom.xml` raíz.
+La configuración del repositorio, los colaboradores y la protección de `main` están documentadas en [github-configuracion.md](github-configuracion.md).
+
+Pendiente: agregar el secreto `SONAR_TOKEN` en *Settings → Secrets and variables → Actions* y poner `sonar.organization` y `sonar.projectKey` reales en el `pom.xml` raíz.
