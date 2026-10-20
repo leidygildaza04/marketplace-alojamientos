@@ -1,7 +1,9 @@
+
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
+
   {
     path: 'login',
     loadComponent: () =>
@@ -19,5 +21,15 @@ export const routes: Routes = [
         (m) => m.RegistroAnfitrion,
       ),
   },
+
+ 
+{
+  path: 'inicio',
+  loadComponent: () =>
+    import('./features/guest/pages/home/home').then(
+      (m) => m.Home,
+    ),
+},
+
   { path: '**', redirectTo: 'login' },
 ];

@@ -1,8 +1,14 @@
+
 <main class="login">
   <section class="welcome" aria-label="Bienvenida">
     <div class="welcome-copy">
-      <p class="eyebrow"><span class="eyebrow-dot"></span> ALOJAMIENTOS CON ENCANTO</p>
+      <p class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        ALOJAMIENTOS CON ENCANTO
+      </p>
+
       <h2>Un lugar nuevo.<br />Una historia tuya.</h2>
+
       <p class="welcome-description">
         Descubre espacios únicos y empieza a sentirte en casa desde el primer día.
       </p>
@@ -14,6 +20,7 @@
       <span class="color-swatch color-swatch-sand"></span>
       <span class="color-swatch color-swatch-green"></span>
     </div>
+
     <p class="welcome-note">Viaja a tu manera.</p>
   </section>
 
@@ -21,24 +28,56 @@
     <div class="form-heading">
       <p class="form-eyebrow">QUÉ BUENO TENERTE DE VUELTA</p>
       <h1>Iniciar sesión</h1>
-      <p class="form-description">Ingresa a tu cuenta para continuar tu próxima aventura.</p>
+      <p class="form-description">
+        Ingresa a tu cuenta para continuar tu próxima aventura.
+      </p>
     </div>
 
     <label for="correo">Correo</label>
-    <input id="correo" type="email" formControlName="correo" placeholder="tu@correo.com" />
+    <input
+      id="correo"
+      type="email"
+      formControlName="correo"
+      placeholder="tu@correo.com"
+      autocomplete="email"
+    />
+
     @if (form.controls.correo.touched && form.controls.correo.invalid) {
-      <small class="field-error">Ingresa un correo válido.</small>
+      <small class="field-error">
+        Ingresa un correo válido.
+      </small>
     }
 
     <label for="contrasenia">Contraseña</label>
-    <input id="contrasenia" type="password" formControlName="contrasenia" />
-    @if (form.controls.contrasenia.touched && form.controls.contrasenia.invalid) {
-      <small class="field-error">Mínimo 6 caracteres.</small>
+    <input
+      id="contrasenia"
+      type="password"
+      formControlName="contrasenia"
+      autocomplete="current-password"
+    />
+
+    @if (
+      form.controls.contrasenia.touched &&
+      form.controls.contrasenia.invalid
+    ) {
+      <small class="field-error">
+        La contraseña debe tener mínimo 6 caracteres.
+      </small>
     }
 
-    <button type="submit">Ingresar</button>
+    @if (mensajeError) {
+      <small class="field-error" role="alert">
+        {{ mensajeError }}
+      </small>
+    }
+
+    <button type="submit" [disabled]="form.invalid">
+      Ingresar
+    </button>
+
     <p class="form-footer">
-      ¿No tienes cuenta? <a routerLink="/registro">Regístrate</a>
+      ¿No tienes cuenta?
+      <a routerLink="/registro">Regístrate</a>
     </p>
   </form>
 </main>

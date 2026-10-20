@@ -1,0 +1,253 @@
+
+<main class="guest-home">
+
+  <header class="navbar">
+    <a class="brand" routerLink="/inicio">
+      <span class="brand-icon">E</span>
+      <span>
+        <strong>ESTANCIA</strong>
+        <small>Tu próximo lugar favorito</small>
+      </span>
+    </a>
+
+    <nav class="nav-links" aria-label="Navegación principal">
+      <a class="nav-active" routerLink="/inicio">Explorar</a>
+      <a href="#alojamientos">Alojamientos</a>
+      <a href="#alojamientos" (click)="verFavoritos()">Favoritos</a>
+    </nav>
+
+    <div class="user-actions">
+      <button class="profile-button" type="button" aria-label="Mi perfil">
+        <span class="profile-icon">♙</span>
+        <span>Mi perfil</span>
+      </button>
+
+      <button class="logout-button" type="button" (click)="cerrarSesion()">
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <p class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        TU PRÓXIMA HISTORIA COMIENZA AQUÍ
+      </p>
+
+      <h1>
+        Encuentra un lugar
+        para sentirte
+        <em>como en casa.</em>
+      </h1>
+
+      <p class="hero-description">
+        Descubre espacios especiales, conoce nuevos lugares
+        y disfruta cada viaje a tu manera.
+      </p>
+
+      <a class="hero-link" href="#alojamientos">
+        Descubrir alojamientos <span>→</span>
+      </a>
+    </div>
+
+    <div class="hero-image">
+      @if (!imagenHeroNoDisponible) {
+      <img
+        src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85"
+        alt="Interior acogedor de un alojamiento"
+        (error)="imagenHeroNoDisponible = true"
+      />
+      } @else {
+        <div class="hero-image-fallback" role="img" aria-label="Fotografía del alojamiento no disponible">
+          Fotografía no disponible
+        </div>
+      }
+      <div class="image-caption">
+        <span class="caption-dot"></span>
+        <span>Espacios para vivir nuevas historias</span>
+      </div>
+    </div>
+
+    <div class="hero-decoration"></div>
+  </section>
+
+  <section class="search-section" aria-label="Buscar alojamientos">
+    <div class="search-heading">
+      <div>
+        <p class="section-eyebrow">EMPIEZA A EXPLORAR</p>
+        <h2>¿A dónde quieres ir?</h2>
+      </div>
+
+      <span class="search-decoration">✳</span>
+    </div>
+
+    <form class="search-form" role="search" (ngSubmit)="buscar()" novalidate>
+      <label class="search-field destination-field">
+        <span class="field-icon">⌖</span>
+        <span class="field-content">
+          <span class="field-label">Destino</span>
+          <input
+            type="text"
+            name="destino"
+            [(ngModel)]="destino"
+            placeholder="Ciudad o alojamiento"
+          />
+        </span>
+      </label>
+
+      <label class="search-field">
+        <span class="field-icon">▦</span>
+        <span class="field-content">
+          <span class="field-label">Llegada</span>
+          <input
+            type="date"
+            name="llegada"
+            [(ngModel)]="llegada"
+            [min]="fechaMinima"
+            [attr.aria-invalid]="!!errorFechas"
+          />
+        </span>
+      </label>
+
+      <label class="search-field">
+        <span class="field-icon">▦</span>
+        <span class="field-content">
+          <span class="field-label">Salida</span>
+          <input
+            type="date"
+            name="salida"
+            [(ngModel)]="salida"
+            [min]="llegada || fechaMinima"
+            [attr.aria-invalid]="!!errorFechas"
+          />
+        </span>
+      </label>
+
+      <label class="search-field guests-field">
+        <span class="field-icon">♙</span>
+        <span class="field-content">
+          <span class="field-label">Huéspedes</span>
+          <select name="huespedes" [(ngModel)]="huespedes">
+            <option [ngValue]="1">1 huésped</option>
+            <option [ngValue]="2">2 huéspedes</option>
+            <option [ngValue]="3">3 huéspedes</option>
+            <option [ngValue]="4">4 huéspedes</option>
+            <option [ngValue]="5">5 o más</option>
+          </select>
+        </span>
+      </label>
+
+      <button class="search-button" type="submit">
+        <span>⌕</span>
+        Buscar
+      </button>
+    </form>
+    @if (errorFechas) {
+      <p class="form-message form-error" id="fecha-error" role="alert">{{ errorFechas }}</p>
+    }
+    @if (busquedaRealizada) {
+      <p class="form-message" role="status">Los alojamientos y las fechas son datos de demostración; la disponibilidad se confirmará cuando exista conexión con el servicio.</p>
+    }
+  </section>
+
+  <section class="accommodations-section" id="alojamientos">
+    <div class="section-heading">
+      <div>
+        <p class="section-eyebrow">{{ soloFavoritos ? 'TUS FAVORITOS' : 'DATOS DE DEMOSTRACIÓN' }}</p>
+        <h2>{{ soloFavoritos ? 'Alojamientos favoritos' : (busquedaRealizada ? 'Resultados de tu búsqueda' : 'Alojamientos que podrían gustarte') }}</h2>
+        <p class="section-description">
+          Encuentra ese lugar especial para tu próxima aventura.
+        </p>
+      </div>
+
+      <span class="results-count">
+        {{ alojamientosFiltrados.length }}
+        {{ alojamientosFiltrados.length === 1 ? 'alojamiento' : 'alojamientos' }}
+      </span>
+    </div>
+
+    @if (alojamientosFiltrados.length > 0) {
+      <div class="accommodation-grid">
+        @for (alojamiento of alojamientosFiltrados; track alojamiento.nombre) {
+          <article class="accommodation-card">
+            <div class="card-image">
+              @if (!alojamiento.imagenNoDisponible) {
+              <img
+                [src]="alojamiento.imagen"
+                [alt]="alojamiento.nombre"
+                loading="lazy"
+                (error)="marcarImagenNoDisponible(alojamiento)"
+              />
+              } @else {
+                <div class="image-fallback" role="img" [attr.aria-label]="'Fotografía no disponible para ' + alojamiento.nombre">
+                  <span>Fotografía no disponible</span>
+                </div>
+              }
+
+              <span class="property-type">{{ alojamiento.tipo }}</span>
+
+              <button
+                class="favorite-button"
+                type="button"
+                [class.is-favorite]="alojamiento.favorito"
+                [attr.aria-label]="alojamiento.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [attr.aria-pressed]="alojamiento.favorito"
+                (click)="alternarFavorito(alojamiento)"
+              >
+                {{ alojamiento.favorito ? '♥' : '♡' }}
+              </button>
+            </div>
+
+            <div class="card-content">
+              <div class="card-location">
+                <span>⌖</span>
+                {{ alojamiento.ciudad }}
+              </div>
+
+              <h3>{{ alojamiento.nombre }}</h3>
+
+              <div class="card-bottom">
+                <p class="price">
+                  <strong>
+                    {{ alojamiento.precio | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}
+                  </strong>
+                  <span>/ noche</span>
+                </p>
+
+                <span class="rating">
+                  <span>★</span>
+                  {{ alojamiento.calificacion }}
+                </span>
+              </div>
+
+              <button class="details-button" type="button" disabled title="La vista de detalle estará disponible en una siguiente etapa">
+                Ver alojamiento
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="empty-icon">⌕</span>
+        <h3>{{ soloFavoritos ? 'Aún no tienes favoritos' : 'No encontramos alojamientos' }}</h3>
+        <p>{{ soloFavoritos ? 'Marca el corazón de un alojamiento para guardarlo durante esta sesión.' : 'Prueba con otra ciudad o con el nombre de otro alojamiento.' }}</p>
+        <button
+          class="clear-button"
+          type="button"
+          (click)="verTodos()"
+        >
+          Ver todos los alojamientos
+        </button>
+      </div>
+    }
+  </section>
+
+  <footer class="footer">
+    <div class="footer-brand">ESTANCIA</div>
+    <p>Encuentra tu lugar. Crea tu historia.</p>
+    <span>Marketplace de Alojamientos</span>
+  </footer>
+
+</main>
