@@ -263,3 +263,23 @@
     gap: 9px;
   }
 }
+.form-message {
+  margin: 8px 0;
+  padding: 11px 12px;
+  border-left: 3px solid var(--pantone-sceptre-red);
+  background: var(--pantone-transparent-yellow);
+  color: var(--pantone-java-brown);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.form-message {
+  margin: 8px 0;
+  padding: 11px 12px;
+  border-left: 3px solid var(--pantone-sceptre-red);
+  background: var(--pantone-transparent-yellow);
+  color: var(--pantone-java-brown);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
