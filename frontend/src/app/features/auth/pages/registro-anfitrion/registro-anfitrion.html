@@ -157,6 +157,7 @@
       </div>
     </div>
 
+    @if (mensaje) { <p class="form-message" role="status">{{ mensaje }}</p> }
     <button class="submit-button" type="submit">Crear cuenta de anfitrión</button>
     <p class="host-prompt">
       ¿Solo quieres alojarte? <a routerLink="/registro">Crear cuenta de viajero</a>

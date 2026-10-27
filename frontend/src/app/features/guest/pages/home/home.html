@@ -6,25 +6,21 @@
       <span class="brand-icon">E</span>
       <span>
         <strong>ESTANCIA</strong>
-        <small>Tu próximo lugar favorito</small>
+        <small>Marketplace de Alojamientos</small>
       </span>
     </a>
 
     <nav class="nav-links" aria-label="Navegación principal">
       <a class="nav-active" routerLink="/inicio">Explorar</a>
-      <a href="#alojamientos">Alojamientos</a>
-      <a href="#alojamientos" (click)="verFavoritos()">Favoritos</a>
+      <a routerLink="/inicio" fragment="alojamientos">Alojamientos</a>
+      <a routerLink="/inicio" fragment="alojamientos" (click)="verFavoritos()">Favoritos</a>
+      <a routerLink="/reservas">Mis reservas</a>
+      @if (role === 'host') { <a routerLink="/anfitrion">Anfitrión</a> }
+      @if (role === 'admin') { <a routerLink="/administracion">Administración</a> }
     </nav>
 
     <div class="user-actions">
-      <button class="profile-button" type="button" aria-label="Mi perfil">
-        <span class="profile-icon">♙</span>
-        <span>Mi perfil</span>
-      </button>
-
-      <button class="logout-button" type="button" (click)="cerrarSesion()">
-        Salir
-      </button>
+      <a class="logout-button" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a>
     </div>
   </header>
 
@@ -46,7 +42,7 @@
         y disfruta cada viaje a tu manera.
       </p>
 
-      <a class="hero-link" href="#alojamientos">
+      <a class="hero-link" routerLink="/inicio" fragment="alojamientos">
         Descubrir alojamientos <span>→</span>
       </a>
     </div>
@@ -142,19 +138,46 @@
         <span>⌕</span>
         Buscar
       </button>
+
+      <div class="advanced-filters" aria-label="Filtros adicionales">
+        <label class="filter-control">
+          <span>Tipo de alojamiento</span>
+          <select name="tipo" [(ngModel)]="tipo">
+            <option value="">Todos los tipos</option>
+            <option value="Apartamento">Apartamento</option>
+            <option value="Cabaña">Cabaña</option>
+            <option value="Casa">Casa</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          <span>Precio mínimo por noche</span>
+          <input type="number" name="precioMinimo" min="0" step="10000" [(ngModel)]="precioMinimo" placeholder="Sin mínimo" />
+        </label>
+        <label class="filter-control">
+          <span>Precio máximo por noche</span>
+          <input type="number" name="precioMaximo" min="0" step="10000" [(ngModel)]="precioMaximo" placeholder="Sin máximo" />
+        </label>
+        <fieldset class="service-filters">
+          <legend>Servicios</legend>
+          <label class="filter-check"><input type="checkbox" name="wifi" [(ngModel)]="serviciosSeleccionados.wifi" /> Wi-Fi</label>
+          <label class="filter-check"><input type="checkbox" name="cocina" [(ngModel)]="serviciosSeleccionados.cocina" /> Cocina equipada</label>
+          <label class="filter-check"><input type="checkbox" name="parqueadero" [(ngModel)]="serviciosSeleccionados.parqueadero" /> Parqueadero</label>
+          <label class="filter-check"><input type="checkbox" name="piscina" [(ngModel)]="serviciosSeleccionados.piscina" /> Piscina</label>
+        </fieldset>
+      </div>
     </form>
     @if (errorFechas) {
       <p class="form-message form-error" id="fecha-error" role="alert">{{ errorFechas }}</p>
     }
     @if (busquedaRealizada) {
-      <p class="form-message" role="status">Los alojamientos y las fechas son datos de demostración; la disponibilidad se confirmará cuando exista conexión con el servicio.</p>
+      <p class="form-message" role="status">Las fechas seleccionadas se usarán para consultar la disponibilidad.</p>
     }
   </section>
 
   <section class="accommodations-section" id="alojamientos">
     <div class="section-heading">
       <div>
-        <p class="section-eyebrow">{{ soloFavoritos ? 'TUS FAVORITOS' : 'DATOS DE DEMOSTRACIÓN' }}</p>
+        <p class="section-eyebrow">{{ soloFavoritos ? 'TUS FAVORITOS' : 'ALOJAMIENTOS' }}</p>
         <h2>{{ soloFavoritos ? 'Alojamientos favoritos' : (busquedaRealizada ? 'Resultados de tu búsqueda' : 'Alojamientos que podrían gustarte') }}</h2>
         <p class="section-description">
           Encuentra ese lugar especial para tu próxima aventura.
@@ -162,68 +185,76 @@
       </div>
 
       <span class="results-count">
-        {{ alojamientosFiltrados.length }}
+          {{ alojamientosFiltrados.length }}
         {{ alojamientosFiltrados.length === 1 ? 'alojamiento' : 'alojamientos' }}
       </span>
+      @if (seleccionComparacion.size >= 2) {
+        <button class="compare-button" type="button" (click)="verComparacion()">Comparar ({{ seleccionComparacion.size }})</button>
+      }
     </div>
+    @if (errorComparacion) { <p class="form-message form-error" role="alert">{{ errorComparacion }}</p> }
 
     @if (alojamientosFiltrados.length > 0) {
       <div class="accommodation-grid">
-        @for (alojamiento of alojamientosFiltrados; track alojamiento.nombre) {
+        @for (alojamiento of alojamientosFiltrados; track alojamiento.id) {
           <article class="accommodation-card">
             <div class="card-image">
-              @if (!alojamiento.imagenNoDisponible) {
+              @if (!imagenesNoDisponibles.has(alojamiento.id)) {
               <img
-                [src]="alojamiento.imagen"
-                [alt]="alojamiento.nombre"
+                [src]="alojamiento.image"
+                [alt]="alojamiento.title"
                 loading="lazy"
-                (error)="marcarImagenNoDisponible(alojamiento)"
+                (error)="marcarImagenNoDisponible(alojamiento.id)"
               />
               } @else {
-                <div class="image-fallback" role="img" [attr.aria-label]="'Fotografía no disponible para ' + alojamiento.nombre">
+                <div class="image-fallback" role="img" [attr.aria-label]="'Fotografía no disponible para ' + alojamiento.title">
                   <span>Fotografía no disponible</span>
                 </div>
               }
 
-              <span class="property-type">{{ alojamiento.tipo }}</span>
+              <span class="property-type">{{ alojamiento.type }}</span>
 
               <button
                 class="favorite-button"
                 type="button"
-                [class.is-favorite]="alojamiento.favorito"
-                [attr.aria-label]="alojamiento.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'"
-                [attr.aria-pressed]="alojamiento.favorito"
+                [class.is-favorite]="alojamiento.favorite"
+                [attr.aria-label]="alojamiento.favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [attr.aria-pressed]="alojamiento.favorite"
                 (click)="alternarFavorito(alojamiento)"
               >
-                {{ alojamiento.favorito ? '♥' : '♡' }}
+                {{ alojamiento.favorite ? '♥' : '♡' }}
               </button>
             </div>
 
             <div class="card-content">
               <div class="card-location">
                 <span>⌖</span>
-                {{ alojamiento.ciudad }}
+                {{ alojamiento.city }}, {{ alojamiento.country }} · {{ alojamiento.capacity }} huéspedes
               </div>
 
-              <h3>{{ alojamiento.nombre }}</h3>
+              <h3>{{ alojamiento.title }}</h3>
 
               <div class="card-bottom">
                 <p class="price">
                   <strong>
-                    {{ alojamiento.precio | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}
+                    {{ alojamiento.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}
                   </strong>
                   <span>/ noche</span>
                 </p>
 
                 <span class="rating">
                   <span>★</span>
-                  {{ alojamiento.calificacion }}
+                  {{ alojamiento.rating }}
                 </span>
               </div>
 
-              <button class="details-button" type="button" disabled title="La vista de detalle estará disponible en una siguiente etapa">
-                Ver alojamiento
+              <button class="compare-choice" type="button" [attr.aria-pressed]="seleccionComparacion.has(alojamiento.id)" (click)="alternarComparacion(alojamiento)">
+                {{ seleccionComparacion.has(alojamiento.id) ? '✓ En comparación' : '＋ Comparar' }}
               </button>
+
+              <a class="details-button" [routerLink]="['/alojamiento', alojamiento.id]">
+                Ver alojamiento
+              </a>
             </div>
           </article>
         }
@@ -232,7 +263,7 @@
       <div class="empty-state">
         <span class="empty-icon">⌕</span>
         <h3>{{ soloFavoritos ? 'Aún no tienes favoritos' : 'No encontramos alojamientos' }}</h3>
-        <p>{{ soloFavoritos ? 'Marca el corazón de un alojamiento para guardarlo durante esta sesión.' : 'Prueba con otra ciudad o con el nombre de otro alojamiento.' }}</p>
+        <p>{{ soloFavoritos ? 'Marca el corazón de un alojamiento para guardarlo en favoritos.' : 'Busca otra ciudad o el nombre de un alojamiento.' }}</p>
         <button
           class="clear-button"
           type="button"
@@ -241,6 +272,29 @@
           Ver todos los alojamientos
         </button>
       </div>
+    }
+    @if (mostrarComparacion && alojamientosComparados.length >= 2) {
+      <section class="comparison-panel" aria-labelledby="comparison-title">
+        <div class="comparison-heading">
+          <div>
+            <p class="section-eyebrow">COMPARA TUS OPCIONES</p>
+            <h3 id="comparison-title">Compara tus opciones</h3>
+          </div>
+          <button type="button" class="close-comparison" (click)="cerrarComparacion()">Cerrar</button>
+        </div>
+        <div class="comparison-scroll">
+          <table>
+            <thead><tr><th scope="col">Característica</th>@for (item of alojamientosComparados; track item.id) { <th scope="col">{{ item.title }}</th> }</tr></thead>
+            <tbody>
+              <tr><th scope="row">Precio por noche</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</td> }</tr>
+              <tr><th scope="row">Capacidad</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.capacity }} huéspedes</td> }</tr>
+              <tr><th scope="row">Tipo</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.type }}</td> }</tr>
+              <tr><th scope="row">Calificación</th>@for (item of alojamientosComparados; track item.id) { <td>★ {{ item.rating }}</td> }</tr>
+              <tr><th scope="row">Servicios</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.amenities.join(', ') }}</td> }</tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     }
   </section>
 
