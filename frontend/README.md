@@ -12,6 +12,19 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Conexión con el backend
+
+El frontend conserva `MarketplaceDataService` como fuente de datos local para poder revisar las vistas sin servidor. La configuración HTTP de Angular está habilitada y `MarketplaceApiService` incluye llamadas tipadas para alojamientos y reservas.
+
+Cuando esté disponible el backend:
+
+1. Ajusta `apiBaseUrl` en `src/environments/environment.ts` a la URL de la API.
+2. Alinea las rutas y los nombres de campos de `MarketplaceApiService` con el contrato real del backend. Actualmente se asumen `GET /accommodations`, `GET /accommodations/:id`, `GET /reservations` y `POST /reservations`.
+3. Sustituye en cada pantalla el origen `MarketplaceDataService` por las llamadas HTTP y gestiona estados de carga y error.
+4. Configura CORS en el backend para permitir el origen del frontend durante desarrollo. Si la API requiere autenticación, acuerda primero el mecanismo con el backend y añade el flujo correspondiente.
+
+Las pantallas aún usan datos locales; no se envían solicitudes a la API hasta conectarlas explícitamente a `MarketplaceApiService`.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
