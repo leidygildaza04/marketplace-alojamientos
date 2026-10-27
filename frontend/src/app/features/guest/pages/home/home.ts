@@ -1,9 +1,20 @@
-import { CurrencyPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AuthSessionService } from '../../../../core/services/auth-session.service';
-import { Accommodation, MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
+import { CurrencyPipe } from '@angular/common';
+
+interface Alojamiento {
+  id: string;
+  nombre: string;
+  ciudad: string;
+  precio: number;
+  calificacion: number;
+  imagen: string;
+  favorito: boolean;
+  tipo: string;
+  imagenNoDisponible: boolean;
+}
 
 @Component({
   selector: 'app-home',
@@ -13,93 +24,91 @@ import { Accommodation, MarketplaceDataService } from '../../../../core/services
   styleUrl: './home.css',
 })
 export class Home {
-  private readonly marketplace = inject(MarketplaceDataService);
-  private readonly session = inject(AuthSessionService);
-
-  get role() { return this.session.role; }
-
-  cerrarSesion(): void { this.session.signOut(); }
-
   destino = '';
   llegada = '';
   salida = '';
   huespedes = 1;
-  tipo = '';
-  precioMinimo: number | null = null;
-  precioMaximo: number | null = null;
-  serviciosSeleccionados = { wifi: false, cocina: false, parqueadero: false, piscina: false };
   busquedaRealizada = false;
   errorFechas = '';
-  errorComparacion = '';
   soloFavoritos = false;
-  mostrarComparacion = false;
   imagenHeroNoDisponible = false;
   readonly fechaMinima = this.fechaLocal(new Date());
-  readonly imagenesNoDisponibles = new Set<string>();
-  readonly seleccionComparacion = new Set<string>();
 
-  get alojamientosFiltrados(): Accommodation[] {
-    const resultados = this.marketplace.getActiveAccommodations({
-      destination: this.destino,
-      type: this.tipo || undefined,
-      guests: this.huespedes,
-      minPrice: this.precioMinimo,
-      maxPrice: this.precioMaximo,
-      amenities: [
-        this.serviciosSeleccionados.wifi && 'Wi-Fi',
-        this.serviciosSeleccionados.cocina && 'Cocina equipada',
-        this.serviciosSeleccionados.parqueadero && 'Parqueadero',
-        this.serviciosSeleccionados.piscina && 'Piscina',
-      ].filter((amenity): amenity is string => Boolean(amenity)),
+  alojamientos: Alojamiento[] = [
+    {
+      id: 'apartamento-con-encanto',
+      nombre: 'Apartamento con encanto',
+      ciudad: 'Bogotá, Colombia',
+      precio: 180000,
+      calificacion: 4.9,
+      imagen:
+        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80',
+      favorito: false,
+      tipo: 'Apartamento',
+      imagenNoDisponible: false,
+    },
+    {
+      id: 'refugio-entre-montanas',
+      nombre: 'Refugio entre montañas',
+      ciudad: 'Villa de Leyva, Colombia',
+      precio: 250000,
+      calificacion: 4.8,
+      imagen:
+        'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=800&q=80',
+      favorito: false,
+      tipo: 'Cabaña',
+      imagenNoDisponible: false,
+    },
+    {
+      id: 'casa-colonial-con-patio',
+      nombre: 'Casa colonial con patio',
+      ciudad: 'Cartagena, Colombia',
+      precio: 320000,
+      calificacion: 5.0,
+      imagen:
+        'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+      favorito: false,
+      tipo: 'Casa',
+      imagenNoDisponible: false,
+    },
+  ];
+
+  get alojamientosFiltrados(): Alojamiento[] {
+    const termino = this.destino.trim().toLocaleLowerCase();
+
+    return this.alojamientos.filter((alojamiento) => {
+      const coincideDestino = !termino ||
+        `${alojamiento.nombre} ${alojamiento.ciudad} ${alojamiento.tipo}`
+          .toLocaleLowerCase()
+          .includes(termino);
+      return coincideDestino && (!this.soloFavoritos || alojamiento.favorito);
     });
-    return this.soloFavoritos ? resultados.filter((item) => item.favorite) : resultados;
-  }
-
-  get alojamientosComparados(): Accommodation[] {
-    return this.marketplace.accommodations.filter(
-      (item) => item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
-    );
   }
 
   buscar(): void {
     this.errorFechas = '';
-    if (Boolean(this.llegada) !== Boolean(this.salida)) {
+    const tieneLlegada = Boolean(this.llegada);
+    const tieneSalida = Boolean(this.salida);
+
+    if (tieneLlegada !== tieneSalida) {
       this.errorFechas = 'Selecciona tanto la fecha de llegada como la de salida.';
     } else if (this.llegada && this.llegada < this.fechaMinima) {
       this.errorFechas = 'La fecha de llegada no puede estar en el pasado.';
     } else if (this.llegada && this.salida && this.salida <= this.llegada) {
       this.errorFechas = 'La salida debe ser posterior a la llegada.';
     }
-    if (this.precioMinimo != null && this.precioMaximo != null && this.precioMinimo > this.precioMaximo) {
-      this.errorFechas = 'El precio mínimo no puede superar el precio máximo.';
-    }
+
     if (this.errorFechas) return;
 
     this.busquedaRealizada = true;
-    document.getElementById('alojamientos')?.scrollIntoView({ behavior: 'smooth' });
+
+    document.getElementById('alojamientos')?.scrollIntoView({
+      behavior: 'smooth',
+    });
   }
 
-  alternarFavorito(alojamiento: Accommodation): void {
-    alojamiento.favorite = !alojamiento.favorite;
-  }
-
-  alternarComparacion(alojamiento: Accommodation): void {
-    this.errorComparacion = '';
-    if (this.seleccionComparacion.has(alojamiento.id)) {
-      this.seleccionComparacion.delete(alojamiento.id);
-    } else if (this.seleccionComparacion.size < 3) {
-      this.seleccionComparacion.add(alojamiento.id);
-    } else {
-      this.errorComparacion = 'Puedes comparar hasta 3 alojamientos a la vez.';
-    }
-  }
-
-  verComparacion(): void {
-    this.mostrarComparacion = true;
-  }
-
-  cerrarComparacion(): void {
-    this.mostrarComparacion = false;
+  alternarFavorito(alojamiento: Alojamiento): void {
+    alojamiento.favorito = !alojamiento.favorito;
   }
 
   verFavoritos(): void {
@@ -110,19 +119,21 @@ export class Home {
   verTodos(): void {
     this.soloFavoritos = false;
     this.destino = '';
-    this.tipo = '';
-    this.precioMinimo = null;
-    this.precioMaximo = null;
-    this.serviciosSeleccionados = { wifi: false, cocina: false, parqueadero: false, piscina: false };
     this.busquedaRealizada = false;
   }
 
-  marcarImagenNoDisponible(id: string): void {
-    this.imagenesNoDisponibles.add(id);
+  marcarImagenNoDisponible(alojamiento: Alojamiento): void {
+    alojamiento.imagenNoDisponible = true;
   }
 
   private fechaLocal(fecha: Date): string {
     const local = new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60_000);
     return local.toISOString().slice(0, 10);
+  }
+
+  cerrarSesion(): void {
+    // Por ahora, navegación de prueba.
+    // Después se conectará al servicio real de autenticación.
+    window.location.href = '/login';
   }
 }

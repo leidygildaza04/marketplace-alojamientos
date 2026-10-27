@@ -1,45 +1,41 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { AuthSessionService, UserRole } from '../../../../core/services/auth-session.service';
 
-interface TestAccount {
-  username: string;
-  password: string;
-  path: string;
-  role: UserRole;
-}
+import { Component, inject } from '@angular/core';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
-  readonly accounts: TestAccount[] = [
-    { username: 'user', password: 'user123', path: '/inicio', role: 'guest' },
-    { username: 'host', password: 'host123', path: '/anfitrion', role: 'host' },
-    { username: 'admin', password: 'admin123', path: '/administracion', role: 'admin' },
-  ];
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
 
-  username = '';
-  password = '';
-  error = '';
+  mensajeError = '';
 
-  constructor(private readonly router: Router, private readonly session: AuthSessionService) {}
+  form = this.fb.nonNullable.group({
+    correo: ['', [Validators.required, Validators.email]],
+    contrasenia: ['', [Validators.required, Validators.minLength(6)]],
+  });
 
-  enter(): void {
-    const account = this.accounts.find(
-      (item) => item.username === this.username.trim() && item.password === this.password,
-    );
-    if (!account) {
-      this.error = 'Usuario o contraseña incorrectos. Inténtalo de nuevo.';
+  onSubmit(): void {
+    this.mensajeError = '';
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
-    this.error = '';
-    this.session.signIn(account.role);
-    void this.router.navigateByUrl(account.path);
+
+    // Modo de prueba: todavía no valida credenciales con el backend.
+    console.log('Datos del login:', this.form.getRawValue());
+
+    void this.router.navigate(['/inicio']);
   }
 }

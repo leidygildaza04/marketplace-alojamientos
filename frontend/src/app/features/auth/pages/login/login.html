@@ -1,18 +1,83 @@
-<main class="access-page">
-  <section class="access-card" aria-labelledby="access-title">
-    <p class="eyebrow"><span aria-hidden="true"></span> MARKETPLACE DE ALOJAMIENTOS</p>
-    <h1 id="access-title">Qué bueno verte de nuevo</h1>
-    <p class="intro">Inicia sesión para continuar explorando Estancia.</p>
 
-    <form class="login-form" (ngSubmit)="enter()">
-      <label for="username">Usuario</label>
-      <input id="username" name="username" [(ngModel)]="username" autocomplete="username" required />
-      <label for="password">Clave</label>
-      <input id="password" name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required />
-      @if (error) { <p class="form-error" role="alert">{{ error }}</p> }
-      <button class="enter-button" type="submit">Entrar</button>
-    </form>
+<main class="login">
+  <section class="welcome" aria-label="Bienvenida">
+    <div class="welcome-copy">
+      <p class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        ALOJAMIENTOS CON ENCANTO
+      </p>
 
-    <p class="access-note">¿Aún no tienes cuenta? <a routerLink="/registro">Crear cuenta</a> o <a routerLink="/registro-anfitrion">publicar un alojamiento</a>.</p>
+      <h2>Un lugar nuevo.<br />Una historia tuya.</h2>
+
+      <p class="welcome-description">
+        Descubre espacios únicos y empieza a sentirte en casa desde el primer día.
+      </p>
+    </div>
+
+    <div class="color-story" aria-label="Paleta de colores cálidos">
+      <span class="color-swatch color-swatch-coral"></span>
+      <span class="color-swatch color-swatch-rose"></span>
+      <span class="color-swatch color-swatch-sand"></span>
+      <span class="color-swatch color-swatch-green"></span>
+    </div>
+
+    <p class="welcome-note">Viaja a tu manera.</p>
   </section>
+
+  <form class="card" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-heading">
+      <p class="form-eyebrow">QUÉ BUENO TENERTE DE VUELTA</p>
+      <h1>Iniciar sesión</h1>
+      <p class="form-description">
+        Ingresa a tu cuenta para continuar tu próxima aventura.
+      </p>
+    </div>
+
+    <label for="correo">Correo</label>
+    <input
+      id="correo"
+      type="email"
+      formControlName="correo"
+      placeholder="tu@correo.com"
+      autocomplete="email"
+    />
+
+    @if (form.controls.correo.touched && form.controls.correo.invalid) {
+      <small class="field-error">
+        Ingresa un correo válido.
+      </small>
+    }
+
+    <label for="contrasenia">Contraseña</label>
+    <input
+      id="contrasenia"
+      type="password"
+      formControlName="contrasenia"
+      autocomplete="current-password"
+    />
+
+    @if (
+      form.controls.contrasenia.touched &&
+      form.controls.contrasenia.invalid
+    ) {
+      <small class="field-error">
+        La contraseña debe tener mínimo 6 caracteres.
+      </small>
+    }
+
+    @if (mensajeError) {
+      <small class="field-error" role="alert">
+        {{ mensajeError }}
+      </small>
+    }
+
+    <button type="submit" [disabled]="form.invalid">
+      Ingresar
+    </button>
+
+    <p class="form-footer">
+      ¿No tienes cuenta?
+      <a routerLink="/registro">Regístrate</a>
+    </p>
+  </form>
 </main>

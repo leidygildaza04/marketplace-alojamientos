@@ -11,7 +11,6 @@ import { adultValidator, matchingPasswordsValidator, todayAsDateInput } from '..
 })
 export class Registro {
   private fb = inject(FormBuilder);
-  mensaje = '';
 
   readonly maxBirthDate = todayAsDateInput();
 
@@ -26,12 +25,12 @@ export class Registro {
   }, { validators: matchingPasswordsValidator });
 
   onSubmit(): void {
-    this.mensaje = '';
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.mensaje = 'Formulario completado correctamente.';
+    // TODO: conectar con el backend cuando esté listo
+    console.info('Formulario de viajero validado; pendiente de integración con backend.');
   }
 }

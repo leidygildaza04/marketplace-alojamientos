@@ -91,10 +91,6 @@ a {
   gap: 25px;
 }
 
-.nav-links {
-  flex-wrap: wrap;
-}
-
 .nav-links a {
   padding: 9px 0;
   color: #E0D8D1;
@@ -134,11 +130,6 @@ button:focus-visible,
   background: transparent;
 }
 
-a.profile-button {
-  color: var(--cream);
-  text-decoration: none;
-}
-
 .profile-icon {
   display: grid;
   place-items: center;
@@ -165,8 +156,8 @@ a.profile-button {
   grid-template-columns: 0.9fr 1.1fr;
   align-items: center;
   gap: 5%;
-  min-height: 420px;
-  padding: 48px 8%;
+  min-height: 470px;
+  padding: 55px 8%;
   overflow: hidden;
   background: var(--cream);
 }
@@ -240,7 +231,7 @@ a.profile-button {
 .hero-image {
   position: relative;
   z-index: 1;
-  height: 320px;
+  height: 340px;
 }
 
 .hero-image img {
@@ -248,7 +239,7 @@ a.profile-button {
   height: 100%;
   display: block;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 45% 45% 8px 8px;
 }
 
 .hero-image-fallback,
@@ -266,7 +257,7 @@ a.profile-button {
 
 .hero-image-fallback {
   min-height: 240px;
-  border-radius: 12px;
+  border-radius: 45% 45% 8px 8px;
 }
 
 .image-caption {
@@ -288,7 +279,13 @@ a.profile-button {
 }
 
 .hero-decoration {
-  display: none;
+  position: absolute;
+  right: -100px;
+  bottom: -160px;
+  width: 350px;
+  height: 350px;
+  border: 1px solid rgb(74 46 39 / 15%);
+  border-radius: 50%;
 }
 
 /* Buscador */
@@ -302,7 +299,7 @@ a.profile-button {
   border: 1px solid #E9E2D9;
   border-radius: 14px;
   background: var(--white);
-  box-shadow: 0 8px 24px rgb(35 24 21 / 5%);
+  box-shadow: 0 12px 35px rgb(35 24 21 / 6%);
 }
 
 .search-heading {
@@ -420,65 +417,6 @@ a.profile-button {
   font-size: 21px;
 }
 
-.advanced-filters {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: end;
-  gap: 12px;
-  padding-top: 4px;
-}
-
-.filter-control {
-  display: grid;
-  gap: 7px;
-  color: var(--soil);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.filter-control input,
-.filter-control select {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid #E8E2DC;
-  border-radius: 7px;
-  background: #FCFAF7;
-  color: var(--brown);
-}
-
-.filter-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  color: var(--soil);
-  font-size: 12px;
-}
-
-.filter-check input {
-  accent-color: var(--red);
-}
-
-.service-filters {
-  display: flex;
-  flex-wrap: wrap;
-  grid-column: 1 / -1;
-  gap: 5px 18px;
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid #E8E2DC;
-  border-radius: 8px;
-}
-
-.service-filters legend {
-  padding: 0 5px;
-  color: var(--soil);
-  font-size: 11px;
-  font-weight: 700;
-}
-
 /* Alojamientos */
 
 .accommodations-section {
@@ -508,17 +446,6 @@ a.profile-button {
   background: #E9EEF4;
   color: var(--soil);
   font-size: 11px;
-}
-
-.compare-button,
-.close-comparison {
-  padding: 10px 14px;
-  border: 0;
-  border-radius: 7px;
-  background: var(--red);
-  color: var(--white);
-  cursor: pointer;
-  font-size: 12px;
 }
 
 .accommodation-grid {
@@ -652,7 +579,6 @@ a.profile-button {
 }
 
 .details-button {
-  display: block;
   width: 100%;
   margin-top: 18px;
   padding: 12px;
@@ -661,73 +587,8 @@ a.profile-button {
   background: var(--white);
   color: var(--red);
   font-size: 12px;
-  text-align: center;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.details-button:hover,
-.details-button:focus-visible {
-  background: var(--red);
-  color: var(--white);
-}
-
-.compare-choice {
-  align-self: flex-start;
-  margin-top: 14px;
-  padding: 7px 10px;
-  border: 1px solid #DED5CC;
-  border-radius: 20px;
-  background: var(--white);
-  color: var(--soil);
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.comparison-panel {
-  margin-top: 35px;
-  padding: 22px;
-  border: 1px solid #E9E2D9;
-  border-radius: 12px;
-  background: var(--white);
-}
-
-.comparison-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.comparison-heading h3 {
-  margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 23px;
-  font-weight: 400;
-}
-
-.comparison-scroll {
-  overflow-x: auto;
-}
-
-.comparison-panel table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.comparison-panel th,
-.comparison-panel td {
-  min-width: 125px;
-  padding: 11px;
-  border: 1px solid #E8E2DC;
-  text-align: left;
-  vertical-align: top;
-}
-
-.comparison-panel thead th {
-  background: #E9EEF4;
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 .image-fallback {
@@ -816,10 +677,6 @@ a.profile-button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .advanced-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .search-button {
     min-height: 48px;
   }
@@ -846,8 +703,7 @@ a.profile-button {
   .nav-links {
     order: 3;
     width: 100%;
-    justify-content: flex-start;
-    gap: 6px 14px;
+    justify-content: space-between;
   }
 
   .nav-links a {
@@ -891,11 +747,6 @@ a.profile-button {
   }
 
   .search-form {
-    grid-template-columns: 1fr;
-  }
-
-  .advanced-filters {
-    grid-column: auto;
     grid-template-columns: 1fr;
   }
 

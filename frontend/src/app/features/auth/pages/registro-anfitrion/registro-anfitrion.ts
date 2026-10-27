@@ -15,7 +15,6 @@ import {
 })
 export class RegistroAnfitrion {
   private fb = inject(FormBuilder);
-  mensaje = '';
 
   readonly maxBirthDate = todayAsDateInput();
 
@@ -35,12 +34,12 @@ export class RegistroAnfitrion {
   );
 
   onSubmit(): void {
-    this.mensaje = '';
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.mensaje = 'Formulario completado correctamente.';
+    // TODO: conectar con el backend cuando esté listo
+    console.info('Formulario de anfitrión validado; pendiente de integración con backend.');
   }
 }
