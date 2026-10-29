@@ -1,47 +1,28 @@
 # 7. Diseño de servicios
 
-> Página nueva (SCRUM-41). Cada subpágina se llena en su tarea de Jira.
+Página índice para el diseño técnico de la solución. Las subpáginas documentan la arquitectura propuesta y su correspondencia con el código actual.
 
 ## Subpáginas
 
 | Subpágina | Qué contiene | Tarea |
 |---|---|---|
-| Arquitectura (C4) | Diagrama de contexto y de contenedores, y la descomposición en servicios con sus responsabilidades | SCRUM-46 |
-| Modelo de datos | Modelo entidad-relación y la responsabilidad de cada servicio sobre sus datos | SCRUM-47 |
+| [Arquitectura (C4)](07-1-arquitectura-c4.md) | Contexto, contenedores, doce servicios lógicos, responsabilidades, flujos, trazabilidad y decisiones por confirmar | SCRUM-46 |
+| [Modelo de datos](07-2-modelo-entidad-relacion.md) | Entidades, atributos, cardinalidades, restricciones, propiedad de datos y decisiones pendientes | SCRUM-47 |
 | Contratos de API | Contratos OpenAPI de cada servicio y colección de pruebas | SCRUM-48 |
-| Secuencias | Diagramas de secuencia de los flujos relevantes (por ejemplo reserva y cancelación) | Por asignar |
+| Secuencias | Diagramas de secuencia de los flujos relevantes (por ejemplo, reserva y cancelación) | Por asignar |
 | Despliegue | Cómo se despliega la solución | Por asignar |
 
-## Qué debe quedar documentado
+## Criterio de lectura
 
-- Descomposición de la solución en servicios con responsabilidades claras.
-- Relación entre cada servicio, los requerimientos, procesos e historias que atiende.
-- Interacciones y dependencias entre servicios en los flujos relevantes.
-- Mecanismos de integración con servicios externos, como el proveedor de pagos de prueba.
-- Correspondencia entre el diseño documentado y lo que realmente se implementó.
+La arquitectura C4 distingue entre **servicios lógicos de negocio** y **contenedores desplegables**. En la versión actual, el backend se agrupa en cuatro módulos Spring Boot (`identity-service`, `catalog-service`, `booking-service` y `backoffice-service`). La documentación de SCRUM-46 descompone las responsabilidades en doce servicios lógicos sin afirmar que todos estén desplegados como aplicaciones independientes.
 
-## Servicios que aparecen en los procesos de negocio
+## Servicios desplegables actuales
 
-Los modelos de la página "4. Procesos de negocio" mencionan nueve servicios y un proveedor externo. El código base del repositorio los agrupa en cuatro servicios desplegables. Esta agrupación es una propuesta que se confirma en SCRUM-46, y la documentación final debe coincidir con lo que se implemente.
-
-| Servicio en los procesos | Servicio en el código base (propuesta) | Procesos donde aparece |
+| Contenedor | Responsabilidad agrupada | Historias según documentación actual |
 |---|---|---|
-| Servicio de Identidad y Perfil | identity-service | P-01 |
-| Servicio de Alojamientos | catalog-service | P-02 |
-| Servicio de Búsqueda | catalog-service | P-03 |
-| Servicio de Disponibilidad | catalog-service | P-03, P-04 |
-| Servicio de Cotización | booking-service | P-03 |
-| Servicio de Reservas | booking-service | P-03 |
-| Servicio de Cancelaciones | booking-service | P-04 |
-| Servicio de Administración/Auditoría | backoffice-service | P-05 |
-| Servicio de Reseñas | backoffice-service | P-05 |
-| Stripe (modo de prueba), proveedor externo | Integración desde booking-service | P-03 |
+| `identity-service` | Identidad y perfiles | HU-01 a HU-06 y HU-23 |
+| `catalog-service` | Alojamientos, búsqueda y disponibilidad | HU-07 a HU-15 |
+| `booking-service` | Cotización, reservas, cancelaciones y notificaciones propuestas | HU-16 a HU-20 |
+| `backoffice-service` | Reseñas, administración, reportería y auditoría propuestas | HU-21, HU-22 y HU-24 a HU-27 |
 
-## Servicios del código base (propuesta)
-
-| Servicio | Historias | Datos que posee |
-|---|---|---|
-| identity-service | HU-01 a HU-06 y HU-23 | Usuarios, roles y perfiles |
-| catalog-service | HU-07 a HU-15 | Publicaciones, servicios (amenities), imágenes y periodos de disponibilidad |
-| booking-service | HU-16 a HU-20 | Cotizaciones, reservas, cancelaciones, pagos simulados y notificaciones |
-| backoffice-service | HU-21, HU-22 y HU-24 a HU-27 | Reseñas, eventos de auditoría y reportes |
+Las responsabilidades agrupadas son una asignación inicial de diseño. Los contratos entre servicios, la propiedad definitiva de datos y la trazabilidad detallada de cada historia se precisarán en los Scrums correspondientes y se validarán con el equipo.
