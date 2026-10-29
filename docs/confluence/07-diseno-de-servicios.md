@@ -1,6 +1,6 @@
 # 7. Diseño de servicios
 
-Página índice para el diseño técnico de la solución. Las subpáginas documentan la arquitectura propuesta y su correspondencia con el código actual.
+Índice de la documentación técnica del Marketplace de Alojamientos. Las subpáginas conectan la arquitectura lógica con el código y las convenciones de implementación.
 
 ## Subpáginas
 
@@ -8,13 +8,16 @@ Página índice para el diseño técnico de la solución. Las subpáginas docume
 |---|---|---|
 | [Arquitectura (C4)](07-1-arquitectura-c4.md) | Contexto, contenedores, doce servicios lógicos, responsabilidades, flujos y decisiones pendientes | SCRUM-46 |
 | [Modelo de datos](07-2-modelo-entidad-relacion.md) | Entidades, atributos, cardinalidades, restricciones y propiedad de datos | SCRUM-47 |
-| [Contratos de API](07-3-contratos-openapi.md) | Contratos OpenAPI de Reservas, Disponibilidad y Cotización | SCRUM-48 |
-| Secuencias | Diagramas de secuencia de los flujos de reserva y cancelación | Por asignar |
+| [Contratos OpenAPI](07-3-contratos-openapi.md) | Contratos iniciales de Reservas, Disponibilidad y Cotización | SCRUM-48 |
+| [Stack técnico y estructura del repositorio](07-4-stack-tecnico-estructura-repositorio.md) | Tecnologías, estructura, ramas, commits y flujo de contribución | SCRUM-49 |
+| Secuencias | Diagramas de secuencia de los flujos relevantes, como reserva y cancelación | Por asignar |
 | Despliegue | Procedimiento y arquitectura de despliegue | Por asignar |
 
 ## Criterio de lectura
 
-La arquitectura distingue entre **servicios lógicos de negocio** y **contenedores desplegables**. Actualmente, el backend se agrupa en cuatro módulos Spring Boot: `identity-service`, `catalog-service`, `booking-service` y `backoffice-service`. Los doce servicios lógicos no implican que existan doce aplicaciones desplegables independientes.
+La arquitectura C4 distingue entre **servicios lógicos de negocio** y **contenedores desplegables**. El backend actual se agrupa en cuatro módulos Spring Boot: `identity-service`, `catalog-service`, `booking-service` y `backoffice-service`. La documentación describe doce servicios lógicos sin afirmar que todos estén desplegados como aplicaciones independientes.
+
+El stack y la estructura documentados en SCRUM-49 reflejan la configuración del repositorio y deben actualizarse cuando el equipo apruebe cambios tecnológicos.
 
 ## Servicios desplegables actuales
 
@@ -53,7 +56,7 @@ Las responsabilidades son una asignación inicial de diseño. Los contratos, los
 | `booking-service` | Cotización, Reservas, Cancelaciones y Notificaciones | Cotizaciones, reservas, cancelaciones, pagos simulados y avisos |
 | `backoffice-service` | Reseñas, Administración, Auditoría y Reportería | Reseñas, eventos de auditoría, moderación y reportes |
 
-Esta agrupación representa las responsabilidades previstas para el MVP. La propiedad de datos y los límites definitivos se detallan en las subpáginas correspondientes.
+Esta agrupación representa las responsabilidades previstas para el MVP. La propiedad de datos, los límites de cada servicio y los diagramas C4 se detallan en las subpáginas correspondientes.
 
 ## Contratos OpenAPI iniciales
 
@@ -63,4 +66,4 @@ Los contratos deben validarse formalmente y contrastarse con los endpoints reale
 
 ## Dependencias externas
 
-La integración con Stripe en modo de prueba se contempla desde `booking-service`. La configuración definitiva y los contratos de integración deben verificarse con la implementación existente.
+La integración con Stripe se contempla en modo de prueba desde `booking-service`, según el diseño propuesto. La configuración definitiva y los contratos de integración deben validarse con la implementación existente.

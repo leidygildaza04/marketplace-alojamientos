@@ -39,8 +39,36 @@ export interface Quote {
   total: number;
 }
 
+export interface MarketplaceReview {
+  id: string;
+  property: string;
+  author: string;
+  text: string;
+}
+
+export interface GuestReservation {
+  code: string;
+  property: string;
+  city: string;
+  arrival: string;
+  departure: string;
+  total: number;
+  status: 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
+  policy: 'Flexible' | 'Moderada';
+}
+
 @Injectable({ providedIn: 'root' })
 export class MarketplaceDataService {
+  private readonly hiddenReviewsKey = 'estancia-hidden-reviews';
+  private readonly reservationsKey = 'estancia-reservations';
+  private readonly initialReservations: GuestReservation[] = [
+    { code: 'R-1024', property: 'Refugio entre montañas', city: 'Villa de Leyva', arrival: '2026-12-12', departure: '2026-12-15', total: 664000, status: 'CONFIRMADA', policy: 'Flexible' },
+    { code: 'R-0987', property: 'Apartamento con encanto', city: 'Bogotá', arrival: '2026-08-03', departure: '2026-08-05', total: 310000, status: 'COMPLETADA', policy: 'Moderada' },
+    { code: 'R-0950', property: 'Casa colonial con patio', city: 'Cartagena', arrival: '2026-10-10', departure: '2026-10-12', total: 720000, status: 'CANCELADA', policy: 'Flexible' },
+  ];
+  readonly reviews: MarketplaceReview[] = [
+    { id: 'rev-01', property: 'Refugio entre montañas', author: 'Huésped', text: 'Un lugar tranquilo, cómodo y muy bien ubicado.' },
+  ];
   readonly serviceFeeRate = 0.1;
   readonly longStayDiscountRate = 0.1;
   readonly longStayMinimumNights = 7;
@@ -140,6 +168,69 @@ export class MarketplaceDataService {
 
   getById(id: string): Accommodation | undefined {
     return this.accommodations.find((item) => item.id === id && item.status === 'ACTIVA');
+  }
+
+  getVisibleReviews(): MarketplaceReview[] {
+    const hidden = this.getHiddenReviewIds();
+    return this.reviews.filter((review) => !hidden.has(review.id));
+  }
+
+  getHiddenReviews(): MarketplaceReview[] {
+    const hidden = this.getHiddenReviewIds();
+    return this.reviews.filter((review) => hidden.has(review.id));
+  }
+
+  hideReview(id: string): void {
+    const hidden = this.getHiddenReviewIds();
+    hidden.add(id);
+    this.saveHiddenReviewIds(hidden);
+  }
+
+  restoreReview(id: string): void {
+    const hidden = this.getHiddenReviewIds();
+    hidden.delete(id);
+    this.saveHiddenReviewIds(hidden);
+  }
+
+  getReservations(): GuestReservation[] {
+    if (typeof localStorage === 'undefined') return [...this.initialReservations];
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem(this.reservationsKey) ?? 'null');
+      if (Array.isArray(stored)) return stored as GuestReservation[];
+    } catch { /* Recupera los datos iniciales si el almacenamiento local no es válido. */ }
+    this.saveReservations(this.initialReservations);
+    return [...this.initialReservations];
+  }
+
+  createReservation(reservation: Omit<GuestReservation, 'code' | 'status'>): GuestReservation {
+    const created: GuestReservation = { ...reservation, code: `R-${Date.now().toString().slice(-6)}`, status: 'CONFIRMADA' };
+    const reservations = this.getReservations();
+    reservations.unshift(created);
+    this.saveReservations(reservations);
+    return created;
+  }
+
+  cancelReservation(code: string): void {
+    const reservations = this.getReservations().map((reservation) => reservation.code === code ? { ...reservation, status: 'CANCELADA' as const } : reservation);
+    this.saveReservations(reservations);
+  }
+
+  private saveReservations(reservations: GuestReservation[]): void {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(this.reservationsKey, JSON.stringify(reservations));
+  }
+
+  private getHiddenReviewIds(): Set<string> {
+    if (typeof localStorage === 'undefined') return new Set();
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem(this.hiddenReviewsKey) ?? '[]');
+      return new Set(Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveHiddenReviewIds(ids: Set<string>): void {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(this.hiddenReviewsKey, JSON.stringify([...ids]));
   }
 
   calculateQuote(item: Accommodation, arrival: string, departure: string, breakfast = false): Quote | null {
