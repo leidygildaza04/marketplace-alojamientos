@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # SonarCloud necesita el historial completo
+          fetch-depth: 0 # SonarCloud necesita el historial completo
 
       - uses: actions/setup-java@v4
         with:
@@ -29,7 +29,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
