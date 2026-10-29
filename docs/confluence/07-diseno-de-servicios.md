@@ -8,7 +8,7 @@
 |---|---|---|
 | Arquitectura (C4) | Diagrama de contexto y de contenedores, y la descomposición en servicios con sus responsabilidades | SCRUM-46 |
 | Modelo de datos | Modelo entidad-relación y la responsabilidad de cada servicio sobre sus datos | SCRUM-47 |
-| Contratos de API | Contratos OpenAPI de cada servicio y colección de pruebas | SCRUM-48 |
+| Contratos de API | Borradores OpenAPI de Reservas, Disponibilidad y Cotización | SCRUM-48 |
 | Secuencias | Diagramas de secuencia de los flujos relevantes (por ejemplo reserva y cancelación) | Por asignar |
 | Despliegue | Cómo se despliega la solución | Por asignar |
 
@@ -45,3 +45,7 @@ Los modelos de la página "4. Procesos de negocio" mencionan nueve servicios y u
 | catalog-service | HU-07 a HU-15 | Publicaciones, servicios (amenities), imágenes y periodos de disponibilidad |
 | booking-service | HU-16 a HU-20 | Cotizaciones, reservas, cancelaciones, pagos simulados y notificaciones |
 | backoffice-service | HU-21, HU-22 y HU-24 a HU-27 | Reseñas, eventos de auditoría y reportes |
+
+## Contratos OpenAPI iniciales
+
+Ver [Contratos OpenAPI iniciales (SCRUM-48)](07-3-contratos-openapi.md), con los borradores de Reservas, Disponibilidad y Cotización.
