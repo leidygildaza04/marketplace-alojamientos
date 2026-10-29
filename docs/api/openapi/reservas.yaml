@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Marketplace de Alojamientos - API de Reservas
+  version: 0.1.0
+  description: Contrato inicial para consultar y gestionar reservas. Debe validarse con el equipo antes de implementar.
+servers:
+  - url: http://localhost:8083/api/v1
+    description: Entorno local de desarrollo (puerto de referencia)
+tags:
+  - name: Reservas
+paths:
+  /reservas:
+    post:
+      tags: [Reservas]
+      summary: Crear una reserva a partir de una cotización
+      operationId: crearReserva
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReserva'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '400':
+          $ref: '#/components/responses/ErrorSolicitud'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '409':
+          description: La cotización expiró o ya no hay disponibilidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags: [Reservas]
+      summary: Consultar reservas del usuario autenticado
+      operationId: listarReservas
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [PENDIENTE, CONFIRMADA, CANCELADA, COMPLETADA]
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Página de reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Reserva' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+  /reservas/{reservaId}:
+    get:
+      tags: [Reservas]
+      summary: Consultar el detalle de una reserva
+      operationId: obtenerReserva
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReservaId'
+      responses:
+        '200':
+          description: Detalle de la reserva
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reserva' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ReservaId:
+      in: path
+      name: reservaId
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    CrearReserva:
+      type: object
+      required: [cotizacionId]
+      properties:
+        cotizacionId: { type: string, format: uuid }
+        observaciones: { type: string, maxLength: 500 }
+    Reserva:
+      type: object
+      required: [id, cotizacionId, alojamientoId, fechaInicio, fechaFin, estado, total, moneda]
+      properties:
+        id: { type: string, format: uuid }
+        cotizacionId: { type: string, format: uuid }
+        alojamientoId: { type: string, format: uuid }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        estado: { type: string, enum: [PENDIENTE, CONFIRMADA, CANCELADA, COMPLETADA] }
+        total: { type: number, format: double, minimum: 0 }
+        moneda: { type: string, example: COP }
+        creadaEn: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
+        detalle: { type: string }
+  responses:
+    ErrorSolicitud:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoAutorizado:
+      description: Falta autenticación válida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoEncontrado:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

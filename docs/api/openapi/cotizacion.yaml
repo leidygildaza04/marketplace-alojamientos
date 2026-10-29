@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Marketplace de Alojamientos - API de Cotización
+  version: 0.1.0
+  description: Contrato inicial para calcular y consultar cotizaciones antes de reservar.
+servers:
+  - url: http://localhost:8083/api/v1
+    description: Entorno local de desarrollo (puerto de referencia)
+tags:
+  - name: Cotizaciones
+paths:
+  /cotizaciones:
+    post:
+      tags: [Cotizaciones]
+      summary: Calcular una cotización para un alojamiento y rango de fechas
+      operationId: crearCotizacion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SolicitudCotizacion' }
+      responses:
+        '201':
+          description: Cotización calculada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cotizacion' }
+        '400':
+          description: Datos de cotización inválidos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: No existe disponibilidad para las fechas solicitadas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Falta autenticación válida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cotizaciones/{cotizacionId}:
+    get:
+      tags: [Cotizaciones]
+      summary: Consultar una cotización y su vigencia
+      operationId: obtenerCotizacion
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: cotizacionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Cotización encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cotizacion' }
+        '401':
+          description: Falta autenticación válida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Cotización no encontrada o no visible para el usuario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SolicitudCotizacion:
+      type: object
+      required: [alojamientoId, fechaInicio, fechaFin, huespedes]
+      properties:
+        alojamientoId: { type: string, format: uuid }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        huespedes: { type: integer, minimum: 1, maximum: 50 }
+        codigoPromocional: { type: string, maxLength: 40 }
+    Cotizacion:
+      type: object
+      required: [id, alojamientoId, fechaInicio, fechaFin, noches, subtotal, total, moneda, expiraEn]
+      properties:
+        id: { type: string, format: uuid }
+        alojamientoId: { type: string, format: uuid }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        noches: { type: integer, minimum: 1 }
+        subtotal: { type: number, format: double, minimum: 0 }
+        descuentos: { type: number, format: double, minimum: 0, default: 0 }
+        impuestos: { type: number, format: double, minimum: 0, default: 0 }
+        total: { type: number, format: double, minimum: 0 }
+        moneda: { type: string, example: COP }
+        expiraEn: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }

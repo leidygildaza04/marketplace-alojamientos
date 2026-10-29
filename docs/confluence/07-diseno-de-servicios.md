@@ -6,18 +6,18 @@
 
 | Subpágina | Qué contiene | Tarea |
 |---|---|---|
-| [Arquitectura (C4)](07-1-arquitectura-c4.md) | Contexto, contenedores, doce servicios lógicos, responsabilidades y flujos | SCRUM-46 |
+| [Arquitectura (C4)](07-1-arquitectura-c4.md) | Contexto, contenedores, doce servicios lógicos, responsabilidades, flujos y decisiones pendientes | SCRUM-46 |
 | [Modelo de datos](07-2-modelo-entidad-relacion.md) | Entidades, atributos, cardinalidades, restricciones y propiedad de datos | SCRUM-47 |
 | [Contratos OpenAPI](07-3-contratos-openapi.md) | Contratos iniciales de Reservas, Disponibilidad y Cotización | SCRUM-48 |
-| [Stack técnico y estructura del repositorio](07-4-stack-tecnico-estructura-repositorio.md) | Tecnologías existentes, estructura, ramas, commits y flujo de contribución | SCRUM-49 |
+| [Stack técnico y estructura del repositorio](07-4-stack-tecnico-estructura-repositorio.md) | Tecnologías, estructura, ramas, commits y flujo de contribución | SCRUM-49 |
 | Secuencias | Diagramas de secuencia de los flujos relevantes, como reserva y cancelación | Por asignar |
-| Despliegue | Procedimiento de despliegue | Por asignar |
+| Despliegue | Procedimiento y arquitectura de despliegue | Por asignar |
 
 ## Criterio de lectura
 
 La arquitectura C4 distingue entre **servicios lógicos de negocio** y **contenedores desplegables**. El backend actual se agrupa en cuatro módulos Spring Boot: `identity-service`, `catalog-service`, `booking-service` y `backoffice-service`. La documentación describe doce servicios lógicos sin afirmar que todos estén desplegados como aplicaciones independientes.
 
-El stack y la estructura documentados en SCRUM-49 reflejan la configuración presente en el repositorio y deben actualizarse cuando el equipo apruebe cambios tecnológicos.
+El stack y la estructura documentados en SCRUM-49 reflejan la configuración del repositorio y deben actualizarse cuando el equipo apruebe cambios tecnológicos.
 
 ## Servicios desplegables actuales
 
@@ -28,11 +28,11 @@ El stack y la estructura documentados en SCRUM-49 reflejan la configuración pre
 | `booking-service` | Cotización, reservas, cancelaciones y notificaciones propuestas | HU-16 a HU-20 |
 | `backoffice-service` | Reseñas, administración, reportería y auditoría propuestas | HU-21, HU-22 y HU-24 a HU-27 |
 
-Las responsabilidades agrupadas son una asignación inicial de diseño. Los contratos entre servicios, la propiedad definitiva de los datos y la trazabilidad detallada se validarán con el equipo.
+Las responsabilidades son una asignación inicial de diseño. Los contratos, los límites de datos y la trazabilidad detallada deben validarse con el equipo.
 
 ## Correspondencia entre servicios lógicos y módulos
 
-| Servicio lógico | Módulo desplegable propuesto | Procesos donde aparece |
+| Servicio lógico | Módulo desplegable propuesto | Procesos |
 |---|---|---|
 | Identidad y Perfil | `identity-service` | P-01 |
 | Alojamientos | `catalog-service` | P-02 |
@@ -57,6 +57,12 @@ Las responsabilidades agrupadas son una asignación inicial de diseño. Los cont
 | `backoffice-service` | Reseñas, Administración, Auditoría y Reportería | Reseñas, eventos de auditoría, moderación y reportes |
 
 Esta agrupación representa las responsabilidades previstas para el MVP. La propiedad de datos, los límites de cada servicio y los diagramas C4 se detallan en las subpáginas correspondientes.
+
+## Contratos OpenAPI iniciales
+
+Consulta [Contratos OpenAPI iniciales (SCRUM-48)](07-3-contratos-openapi.md), donde se documentan los borradores de Reservas, Disponibilidad y Cotización.
+
+Los contratos deben validarse formalmente y contrastarse con los endpoints reales antes de considerarse definitivos.
 
 ## Dependencias externas
 
