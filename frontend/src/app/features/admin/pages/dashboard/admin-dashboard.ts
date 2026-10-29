@@ -37,10 +37,9 @@ export class AdminDashboard {
   aviso = '';
   error = '';
   entityFilter = '';
-  private readonly reviewExamples = [
-    { id: 'rev-01', property: 'Refugio entre montañas', author: 'Huésped', text: 'Un lugar tranquilo, cómodo y muy bien ubicado.' },
-  ];
-  readonly reviews = this.reviewExamples;
+  readonly reviews = this.marketplace.reviews;
+  mostrarResenasOcultas = false;
+  get reviewsToShow() { return this.mostrarResenasOcultas ? this.marketplace.getHiddenReviews() : this.marketplace.getVisibleReviews(); }
 
   cerrarSesion(): void { this.session.signOut(); }
 
@@ -80,10 +79,15 @@ export class AdminDashboard {
   }
 
   ocultarResena(id: string): void {
-    const index = this.reviewExamples.findIndex((review) => review.id === id);
-    if (index >= 0) this.reviewExamples.splice(index, 1);
+    this.marketplace.hideReview(id);
     this.auditEvents.unshift({ actor: 'Administrador', action: 'RESENA_OCULTA', entity: id, result: 'Completado', createdAt: new Date() });
     this.aviso = 'Reseña ocultada.';
+  }
+
+  restaurarResena(id: string): void {
+    this.marketplace.restoreReview(id);
+    this.auditEvents.unshift({ actor: 'Administrador', action: 'RESENA_RESTAURADA', entity: id, result: 'Completado', createdAt: new Date() });
+    this.aviso = 'Reseña restaurada.';
   }
 
   exportCsv(): void {
