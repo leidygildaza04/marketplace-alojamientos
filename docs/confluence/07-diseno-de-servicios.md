@@ -6,7 +6,7 @@
 
 | Subpágina | Qué contiene | Tarea |
 |---|---|---|
-| Arquitectura (C4) | Diagrama de contexto y de contenedores, y la descomposición en servicios con sus responsabilidades | SCRUM-46 |
+| Arquitectura (C4) | [Contexto, contenedores, 12 servicios lógicos, responsabilidades e interacciones](07-1-arquitectura-c4.md) | SCRUM-46 |
 | Modelo de datos | Modelo entidad-relación y la responsabilidad de cada servicio sobre sus datos | SCRUM-47 |
 | Contratos de API | Contratos OpenAPI de cada servicio y colección de pruebas | SCRUM-48 |
 | Secuencias | Diagramas de secuencia de los flujos relevantes (por ejemplo reserva y cancelación) | Por asignar |
@@ -22,7 +22,7 @@
 
 ## Servicios que aparecen en los procesos de negocio
 
-Los modelos de la página "4. Procesos de negocio" mencionan nueve servicios y un proveedor externo. El código base del repositorio los agrupa en cuatro servicios desplegables. Esta agrupación es una propuesta que se confirma en SCRUM-46, y la documentación final debe coincidir con lo que se implemente.
+Los procesos de negocio se descomponen en 12 servicios lógicos, documentados en [Arquitectura (C4)](07-1-arquitectura-c4.md). El código base del repositorio los agrupa actualmente en cuatro servicios desplegables. La vista lógica no implica que los 12 servicios sean aplicaciones independientes.
 
 | Servicio en los procesos | Servicio en el código base (propuesta) | Procesos donde aparece |
 |---|---|---|
@@ -37,11 +37,13 @@ Los modelos de la página "4. Procesos de negocio" mencionan nueve servicios y u
 | Servicio de Reseñas | backoffice-service | P-05 |
 | Stripe (modo de prueba), proveedor externo | Integración desde booking-service | P-03 |
 
-## Servicios del código base (propuesta)
+## Agrupación desplegable actual
 
-| Servicio | Historias | Datos que posee |
+| Módulo desplegable | Servicios lógicos agrupados | Datos principales |
 |---|---|---|
-| identity-service | HU-01 a HU-06 y HU-23 | Usuarios, roles y perfiles |
-| catalog-service | HU-07 a HU-15 | Publicaciones, servicios (amenities), imágenes y periodos de disponibilidad |
-| booking-service | HU-16 a HU-20 | Cotizaciones, reservas, cancelaciones, pagos simulados y notificaciones |
-| backoffice-service | HU-21, HU-22 y HU-24 a HU-27 | Reseñas, eventos de auditoría y reportes |
+| `identity-service` | Identidad y perfil | Usuarios, roles y perfiles |
+| `catalog-service` | Alojamientos, Disponibilidad y Búsqueda | Publicaciones, servicios, imágenes y periodos disponibles |
+| `booking-service` | Cotización, Reservas, Cancelaciones y Notificaciones | Cotizaciones, reservas, cancelaciones, pagos simulados y avisos |
+| `backoffice-service` | Reseñas, Administración, Auditoría y Reportería | Reseñas, eventos de auditoría, moderación y reportes |
+
+La tabla es una agrupación de responsabilidades para el MVP. Las dependencias, límites de datos y diagramas C4 se detallan en `07-1-arquitectura-c4.md`.
