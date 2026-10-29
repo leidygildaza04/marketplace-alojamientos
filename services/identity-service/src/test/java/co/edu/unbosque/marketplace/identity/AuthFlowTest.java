@@ -1,7 +1,8 @@
+
 package co.edu.unbosque.marketplace.identity;
 
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -26,7 +27,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @ActiveProfiles("test")
 class AuthFlowTest {
 
-    private static final String PASSWORD = "Clave12345";
+    private static final String PASSWORD = "Clave12345!";
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,13 +43,17 @@ class AuthFlowTest {
         return mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of(
-                        "email", email, "password", password, "fullName", "Persona de Prueba", "role", role))));
+                        "email", email,
+                        "password", password,
+                        "fullName", "Persona de Prueba",
+                        "role", role))));
     }
 
     private ResultActions login(String email, String password) throws Exception {
         return mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("email", email, "password", password))));
+                .content(objectMapper.writeValueAsString(
+                        Map.of("email", email, "password", password))));
     }
 
     @Test
@@ -70,7 +75,10 @@ class AuthFlowTest {
     @Test
     void registerWithDuplicatedEmailReturnsConflict() throws Exception {
         String email = uniqueEmail();
-        register(email, PASSWORD, "GUEST").andExpect(status().isCreated());
+
+        register(email, PASSWORD, "GUEST")
+                .andExpect(status().isCreated());
+
         register(email.toUpperCase(), PASSWORD, "GUEST")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_USED"));
@@ -99,7 +107,10 @@ class AuthFlowTest {
     @Test
     void loginWithValidCredentialsReturnsToken() throws Exception {
         String email = uniqueEmail();
-        register(email, PASSWORD, "HOST").andExpect(status().isCreated());
+
+        register(email, PASSWORD, "HOST")
+                .andExpect(status().isCreated());
+
         login(email, PASSWORD)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
@@ -109,7 +120,10 @@ class AuthFlowTest {
     @Test
     void loginWithWrongPasswordReturnsUnauthorized() throws Exception {
         String email = uniqueEmail();
-        register(email, PASSWORD, "GUEST").andExpect(status().isCreated());
+
+        register(email, PASSWORD, "GUEST")
+                .andExpect(status().isCreated());
+
         login(email, "otraClave999")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
@@ -117,25 +131,37 @@ class AuthFlowTest {
 
     @Test
     void protectedRouteWithoutTokenReturnsUnauthorized() throws Exception {
-        mockMvc.perform(get("/api/users/me")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void protectedRouteWithTokenReturnsCurrentUser() throws Exception {
         String email = uniqueEmail();
-        register(email, PASSWORD, "GUEST").andExpect(status().isCreated());
-        String body = login(email, PASSWORD).andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        String token = objectMapper.readTree(body).get("token").asText();
 
-        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + token))
+        register(email, PASSWORD, "GUEST")
+                .andExpect(status().isCreated());
+
+        String body = login(email, PASSWORD)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(body)
+                .get("token")
+                .asText();
+
+        mockMvc.perform(get("/api/users/me")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email));
     }
 
     @Test
     void protectedRouteWithInvalidTokenReturnsUnauthorized() throws Exception {
-        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer token-falso"))
+        mockMvc.perform(get("/api/users/me")
+                        .header("Authorization", "Bearer token-falso"))
                 .andExpect(status().isUnauthorized());
     }
 }
