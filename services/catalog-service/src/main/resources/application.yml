@@ -1,10 +1,18 @@
 server:
   port: 8082
-
 spring:
   application:
     name: catalog-service
-
+  datasource:
+    url: ${CATALOG_DB_URL:jdbc:mysql://localhost:3306/catalog_db}
+    username: ${CATALOG_DB_USER:app}
+    password: ${CATALOG_DB_PASSWORD:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
 management:
   endpoints:
     web:
