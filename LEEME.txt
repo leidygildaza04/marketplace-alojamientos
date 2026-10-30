@@ -1,0 +1,16 @@
+SCRUM-19 — ARCHIVOS DE LA HISTORIA
+
+Este ZIP contiene únicamente los archivos relacionados con SCRUM-19 (activar/desactivar cuenta),
+no incluye el proyecto completo.
+
+INTEGRACIÓN:
+1. Haz una copia de seguridad de tu proyecto.
+2. Extrae el contenido de este ZIP en la raíz de tu repositorio/proyecto.
+3. Acepta reemplazar los archivos existentes cuando Windows lo pregunte.
+4. Los archivos se ubican en sus rutas originales bajo services/ y docs/.
+
+Se agregó AccountServicesClient para aislar las llamadas HTTP a booking-service y catalog-service.
+La prueba de identidad simula ese cliente para que los tests no dependan de tener esos servicios
+levantados. Se mantienen los endpoints, migraciones y documentación incluidos en SCRUM-19.
+
+Nota: los tests no se ejecutaron en este entorno; deben validarse en el proyecto local.
