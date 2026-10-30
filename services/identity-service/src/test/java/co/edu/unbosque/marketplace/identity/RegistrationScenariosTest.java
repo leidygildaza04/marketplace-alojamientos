@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.identity;
 
 import static org.hamcrest.Matchers.containsString;
@@ -27,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @ActiveProfiles("test")
 class RegistrationScenariosTest {
 
-    private static final String PASSWORD = "ClaveSegura123";
+    private static final String PASSWORD = "Clave12345!";
 
     @Autowired
     private MockMvc mockMvc;
