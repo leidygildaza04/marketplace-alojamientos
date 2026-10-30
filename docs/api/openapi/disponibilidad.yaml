@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Marketplace de Alojamientos - API de Disponibilidad
+  version: 0.1.0
+  description: Contrato inicial de consulta de disponibilidad de alojamientos.
+servers:
+  - url: http://localhost:8082/api/v1
+    description: Entorno local de desarrollo (puerto de referencia)
+tags:
+  - name: Disponibilidad
+paths:
+  /alojamientos/{alojamientoId}/disponibilidad:
+    get:
+      tags: [Disponibilidad]
+      summary: Consultar disponibilidad para un rango de fechas
+      operationId: consultarDisponibilidad
+      parameters:
+        - in: path
+          name: alojamientoId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: fechaInicio
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: fechaFin
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: huespedes
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: Resultado de disponibilidad
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Disponibilidad' }
+        '400':
+          description: Fechas o cantidad de huéspedes inválidas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Alojamiento no encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    Disponibilidad:
+      type: object
+      required: [alojamientoId, fechaInicio, fechaFin, disponible]
+      properties:
+        alojamientoId: { type: string, format: uuid }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        huespedes: { type: integer, minimum: 1 }
+        disponible: { type: boolean }
+        periodosNoDisponibles:
+          type: array
+          items:
+            type: object
+            required: [desde, hasta]
+            properties:
+              desde: { type: string, format: date }
+              hasta: { type: string, format: date }
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
