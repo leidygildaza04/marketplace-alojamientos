@@ -1,47 +1,63 @@
 # 7. Diseño de servicios
 
-> Página nueva (SCRUM-41). Cada subpágina se llena en su tarea de Jira.
+Índice de la documentación técnica del Marketplace de Alojamientos. Las subpáginas conectan la arquitectura lógica con el código y las convenciones de implementación.
 
 ## Subpáginas
 
 | Subpágina | Qué contiene | Tarea |
 |---|---|---|
-| Arquitectura (C4) | Diagrama de contexto y de contenedores, y la descomposición en servicios con sus responsabilidades | SCRUM-46 |
-| Modelo de datos | Modelo entidad-relación y la responsabilidad de cada servicio sobre sus datos | SCRUM-47 |
-| Contratos de API | Contratos OpenAPI de cada servicio y colección de pruebas | SCRUM-48 |
-| Secuencias | Diagramas de secuencia de los flujos relevantes (por ejemplo reserva y cancelación) | Por asignar |
-| Despliegue | Cómo se despliega la solución | Por asignar |
+| [Arquitectura (C4)](07-1-arquitectura-c4.md) | Contexto, contenedores, doce servicios lógicos, responsabilidades y flujos | SCRUM-46 |
+| [Modelo de datos](07-2-modelo-entidad-relacion.md) | Entidades, atributos, cardinalidades, restricciones y propiedad de datos | SCRUM-47 |
+| [Contratos OpenAPI](07-3-contratos-openapi.md) | Contratos iniciales de Reservas, Disponibilidad y Cotización | SCRUM-48 |
+| [Stack técnico y estructura del repositorio](07-4-stack-tecnico-estructura-repositorio.md) | Tecnologías existentes, estructura, ramas, commits y flujo de contribución | SCRUM-49 |
+| Secuencias | Diagramas de secuencia de los flujos relevantes, como reserva y cancelación | Por asignar |
+| Despliegue | Procedimiento de despliegue | Por asignar |
 
-## Qué debe quedar documentado
+## Criterio de lectura
 
-- Descomposición de la solución en servicios con responsabilidades claras.
-- Relación entre cada servicio, los requerimientos, procesos e historias que atiende.
-- Interacciones y dependencias entre servicios en los flujos relevantes.
-- Mecanismos de integración con servicios externos, como el proveedor de pagos de prueba.
-- Correspondencia entre el diseño documentado y lo que realmente se implementó.
+La arquitectura C4 distingue entre **servicios lógicos de negocio** y **contenedores desplegables**. El backend actual se agrupa en cuatro módulos Spring Boot: `identity-service`, `catalog-service`, `booking-service` y `backoffice-service`. La documentación describe doce servicios lógicos sin afirmar que todos estén desplegados como aplicaciones independientes.
 
-## Servicios que aparecen en los procesos de negocio
+El stack y la estructura documentados en SCRUM-49 reflejan la configuración presente en el repositorio y deben actualizarse cuando el equipo apruebe cambios tecnológicos.
 
-Los modelos de la página "4. Procesos de negocio" mencionan nueve servicios y un proveedor externo. El código base del repositorio los agrupa en cuatro servicios desplegables. Esta agrupación es una propuesta que se confirma en SCRUM-46, y la documentación final debe coincidir con lo que se implemente.
+## Servicios desplegables actuales
 
-| Servicio en los procesos | Servicio en el código base (propuesta) | Procesos donde aparece |
+| Contenedor | Responsabilidad agrupada | Historias según documentación actual |
 |---|---|---|
-| Servicio de Identidad y Perfil | identity-service | P-01 |
-| Servicio de Alojamientos | catalog-service | P-02 |
-| Servicio de Búsqueda | catalog-service | P-03 |
-| Servicio de Disponibilidad | catalog-service | P-03, P-04 |
-| Servicio de Cotización | booking-service | P-03 |
-| Servicio de Reservas | booking-service | P-03 |
-| Servicio de Cancelaciones | booking-service | P-04 |
-| Servicio de Administración/Auditoría | backoffice-service | P-05 |
-| Servicio de Reseñas | backoffice-service | P-05 |
-| Stripe (modo de prueba), proveedor externo | Integración desde booking-service | P-03 |
+| `identity-service` | Identidad y perfiles | HU-01 a HU-06 y HU-23 |
+| `catalog-service` | Alojamientos, búsqueda y disponibilidad | HU-07 a HU-15 |
+| `booking-service` | Cotización, reservas, cancelaciones y notificaciones propuestas | HU-16 a HU-20 |
+| `backoffice-service` | Reseñas, administración, reportería y auditoría propuestas | HU-21, HU-22 y HU-24 a HU-27 |
 
-## Servicios del código base (propuesta)
+Las responsabilidades agrupadas son una asignación inicial de diseño. Los contratos entre servicios, la propiedad definitiva de los datos y la trazabilidad detallada se validarán con el equipo.
 
-| Servicio | Historias | Datos que posee |
+## Correspondencia entre servicios lógicos y módulos
+
+| Servicio lógico | Módulo desplegable propuesto | Procesos donde aparece |
 |---|---|---|
-| identity-service | HU-01 a HU-06 y HU-23 | Usuarios, roles y perfiles |
-| catalog-service | HU-07 a HU-15 | Publicaciones, servicios (amenities), imágenes y periodos de disponibilidad |
-| booking-service | HU-16 a HU-20 | Cotizaciones, reservas, cancelaciones, pagos simulados y notificaciones |
-| backoffice-service | HU-21, HU-22 y HU-24 a HU-27 | Reseñas, eventos de auditoría y reportes |
+| Identidad y Perfil | `identity-service` | P-01 |
+| Alojamientos | `catalog-service` | P-02 |
+| Búsqueda | `catalog-service` | P-03 |
+| Disponibilidad | `catalog-service` | P-03, P-04 |
+| Cotización | `booking-service` | P-03 |
+| Reservas | `booking-service` | P-03 |
+| Cancelaciones | `booking-service` | P-04 |
+| Notificaciones | `booking-service` | Flujos de reservas y cancelaciones |
+| Administración | `backoffice-service` | P-05 |
+| Auditoría | `backoffice-service` | P-05 |
+| Reseñas | `backoffice-service` | P-05 |
+| Reportería | `backoffice-service` | P-05 |
+
+## Agrupación desplegable actual
+
+| Módulo desplegable | Servicios lógicos agrupados | Datos principales |
+|---|---|---|
+| `identity-service` | Identidad y perfil | Usuarios, roles y perfiles |
+| `catalog-service` | Alojamientos, Disponibilidad y Búsqueda | Publicaciones, servicios, imágenes y periodos disponibles |
+| `booking-service` | Cotización, Reservas, Cancelaciones y Notificaciones | Cotizaciones, reservas, cancelaciones, pagos simulados y avisos |
+| `backoffice-service` | Reseñas, Administración, Auditoría y Reportería | Reseñas, eventos de auditoría, moderación y reportes |
+
+Esta agrupación representa las responsabilidades previstas para el MVP. La propiedad de datos, los límites de cada servicio y los diagramas C4 se detallan en las subpáginas correspondientes.
+
+## Dependencias externas
+
+La integración con Stripe se contempla en modo de prueba desde `booking-service`, según el diseño propuesto. La configuración definitiva y los contratos de integración deben validarse con la implementación existente.
