@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
+import { ProfilePanel } from '../../../../core/components/profile-panel/profile-panel';
 import { Accommodation, MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
 
 type AdminSection = 'resumen' | 'publicaciones' | 'usuarios' | 'auditoria';
@@ -13,7 +14,7 @@ interface PendingAction { kind: 'listing' | 'user'; id: string; label: string; }
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink],
+  imports: [DatePipe, FormsModule, RouterLink, ProfilePanel],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })

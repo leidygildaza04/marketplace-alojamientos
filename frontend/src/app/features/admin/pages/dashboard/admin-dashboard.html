@@ -1,5 +1,5 @@
 <main class="admin-page">
-  <header class="admin-nav"><a routerLink="/inicio" class="brand"><span class="brand-mark">E</span><span><strong>ESTANCIA</strong><small>Administración</small></span></a><nav aria-label="Navegación administrativa"><a routerLink="/inicio">Marketplace</a><a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a></nav></header>
+  <header class="admin-nav"><a routerLink="/inicio" class="brand"><span class="brand-mark">T</span><span><strong>TRAVESÍA</strong><small>Administración</small></span></a><nav aria-label="Navegación administrativa"><a routerLink="/inicio">Marketplace</a><app-profile-panel /><a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a></nav></header>
   <section class="admin-content">
     <p class="eyebrow">OPERACIÓN Y TRAZABILIDAD</p><h1>Panel de administración</h1><p class="lead">Supervisa publicaciones, cuentas y actividad del marketplace.</p>
     @if (aviso) { <p class="notice" role="status">{{ aviso }}</p> }

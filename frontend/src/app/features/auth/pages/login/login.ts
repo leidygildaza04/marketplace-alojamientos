@@ -39,7 +39,7 @@ export class Login {
       return;
     }
     this.error = '';
-    this.session.signIn(account.role);
+    this.session.signIn(account.username, account.role);
     void this.router.navigateByUrl(account.path);
   }
 }

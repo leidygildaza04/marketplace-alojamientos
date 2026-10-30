@@ -3,12 +3,13 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
+import { ProfilePanel } from '../../../../core/components/profile-panel/profile-panel';
 import { Accommodation, MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FormsModule, RouterLink, CurrencyPipe],
+  imports: [FormsModule, RouterLink, CurrencyPipe, ProfilePanel],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
