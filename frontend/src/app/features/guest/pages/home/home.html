@@ -3,10 +3,10 @@
 
   <header class="navbar">
     <a class="brand" routerLink="/inicio">
-      <span class="brand-icon">E</span>
+      <span class="brand-icon">T</span>
       <span>
-        <strong>ESTANCIA</strong>
-        <small>Marketplace de Alojamientos</small>
+        <strong>TRAVESÍA</strong>
+        <small>Alojamientos para descubrir</small>
       </span>
     </a>
 
@@ -20,6 +20,7 @@
     </nav>
 
     <div class="user-actions">
+      <app-profile-panel />
       <a class="logout-button" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a>
     </div>
   </header>
@@ -299,9 +300,9 @@
   </section>
 
   <footer class="footer">
-    <div class="footer-brand">ESTANCIA</div>
+    <div class="footer-brand">TRAVESÍA</div>
     <p>Encuentra tu lugar. Crea tu historia.</p>
-    <span>Marketplace de Alojamientos</span>
+    <span>Alojamientos para descubrir</span>
   </footer>
 
 </main>

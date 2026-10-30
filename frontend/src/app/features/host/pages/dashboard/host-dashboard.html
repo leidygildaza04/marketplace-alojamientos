@@ -1,5 +1,5 @@
 <main class="host-page">
-  <header class="host-nav"><a routerLink="/inicio" class="brand"><span class="brand-mark">E</span><span><strong>ESTANCIA</strong><small>Área de anfitrión</small></span></a><nav aria-label="Navegación anfitrión"><a routerLink="/inicio">Explorar</a><a routerLink="/anfitrion" fragment="publicaciones">Publicaciones</a><a routerLink="/anfitrion" fragment="disponibilidad">Disponibilidad</a><a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a></nav></header>
+  <header class="host-nav"><a routerLink="/inicio" class="brand"><span class="brand-mark">T</span><span><strong>TRAVESÍA</strong><small>Área de anfitrión</small></span></a><nav aria-label="Navegación anfitrión"><a routerLink="/inicio">Explorar</a><a routerLink="/anfitrion" fragment="publicaciones">Publicaciones</a><a routerLink="/anfitrion" fragment="disponibilidad">Disponibilidad</a><app-profile-panel /><a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a></nav></header>
   <section class="host-content">
     <p class="eyebrow">PANEL DEL ANFITRIÓN</p><h1>Tu espacio, bien cuidado.</h1><p class="lead">Administra tus publicaciones y periodos de disponibilidad.</p>
     @if (aviso) { <p class="notice" role="status">{{ aviso }}</p> }

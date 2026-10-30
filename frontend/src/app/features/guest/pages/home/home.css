@@ -22,8 +22,9 @@ html {
   min-height: 100vh;
   background: #FCFAF5;
   color: var(--brown);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-friendly, 'Trebuchet MS'), Arial, sans-serif;
 }
+
 
 button,
 input,
@@ -67,7 +68,7 @@ a {
   height: 42px;
   border: 1px solid var(--cream);
   border-radius: 50%;
-  font-family: Georgia, serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 25px;
 }
 
@@ -201,7 +202,7 @@ a.profile-button {
 
 .hero h1 {
   margin: 22px 0 18px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: clamp(38px, 4.3vw, 62px);
   font-weight: 400;
   line-height: 1.08;
@@ -320,7 +321,7 @@ a.profile-button {
 .search-heading h2,
 .section-heading h2 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 27px;
   font-weight: 400;
 }
@@ -617,7 +618,7 @@ a.profile-button {
 .card-content h3 {
   min-height: 2.8em;
   margin: 11px 0 18px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 20px;
   font-weight: 400;
 }
@@ -702,7 +703,7 @@ a.profile-button {
 
 .comparison-heading h3 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 23px;
   font-weight: 400;
 }
@@ -750,7 +751,7 @@ a.profile-button {
 }
 
 .empty-state h3 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 23px;
   font-weight: 400;
 }
@@ -781,7 +782,7 @@ a.profile-button {
 
 .footer-brand {
   letter-spacing: 4px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-friendly), sans-serif;
   font-size: 19px;
 }
 
