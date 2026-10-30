@@ -90,7 +90,7 @@ export class MarketplaceDataService {
       rules: ['No fumar', 'No se permiten fiestas'],
       cancellationPolicy: 'Flexible',
       status: 'ACTIVA',
-      host: 'Equipo Estancia',
+      host: 'Equipo Travesía',
       favorite: false,
     },
     {
@@ -109,7 +109,7 @@ export class MarketplaceDataService {
       rules: ['No fumar', 'Mascotas con autorización'],
       cancellationPolicy: 'Flexible',
       status: 'ACTIVA',
-      host: 'Equipo Estancia',
+      host: 'Equipo Travesía',
       favorite: false,
     },
     {
@@ -128,7 +128,7 @@ export class MarketplaceDataService {
       rules: ['No fumar', 'Respetar el horario de descanso'],
       cancellationPolicy: 'Moderada',
       status: 'ACTIVA',
-      host: 'Equipo Estancia',
+      host: 'Equipo Travesía',
       favorite: false,
     },
     {
@@ -147,7 +147,7 @@ export class MarketplaceDataService {
       rules: ['No fumar'],
       cancellationPolicy: 'Moderada',
       status: 'ACTIVA',
-      host: 'Equipo Estancia',
+      host: 'Equipo Travesía',
       favorite: false,
     },
   ];

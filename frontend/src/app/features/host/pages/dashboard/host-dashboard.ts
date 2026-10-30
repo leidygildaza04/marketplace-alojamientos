@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
+import { ProfilePanel } from '../../../../core/components/profile-panel/profile-panel';
 import { Accommodation, MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
 
 interface AvailabilityPeriod { propertyId: string; propertyTitle: string; start: string; end: string; status: 'DISPONIBLE' | 'RESERVADO'; }
@@ -10,7 +11,7 @@ interface AvailabilityPeriod { propertyId: string; propertyTitle: string; start:
 @Component({
   selector: 'app-host-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, FormsModule, RouterLink],
+  imports: [CurrencyPipe, FormsModule, RouterLink, ProfilePanel],
   templateUrl: './host-dashboard.html',
   styleUrl: './host-dashboard.css',
 })
@@ -47,7 +48,7 @@ export class HostDashboard {
       description: this.draft.description.trim(),
       amenities: this.draft.amenities.split(',').map((value) => value.trim()).filter(Boolean),
       rules: this.draft.rules.split(',').map((value) => value.trim()).filter(Boolean),
-      cancellationPolicy: 'Flexible', status: 'BORRADOR', host: 'Anfitrión Estancia', favorite: false,
+      cancellationPolicy: 'Flexible', status: 'BORRADOR', host: 'Anfitrión Travesía', favorite: false,
     };
     this.marketplace.accommodations.push(item);
     this.draft = { title: '', city: '', type: 'Apartamento', capacity: 1, pricePerNight: 0, description: '', image: '', amenities: '', rules: '' };
