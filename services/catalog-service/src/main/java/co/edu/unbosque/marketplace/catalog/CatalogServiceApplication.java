@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog;
 
 import org.springframework.boot.SpringApplication;

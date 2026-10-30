@@ -10,6 +10,7 @@
     <version>3.4.5</version>
     <relativePath/>
   </parent>
+  
 
   <groupId>co.edu.unbosque.marketplace</groupId>
   <artifactId>marketplace-parent</artifactId>

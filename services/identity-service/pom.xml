@@ -11,7 +11,6 @@
   </parent>
   <artifactId>identity-service</artifactId>
   <name>identity-service</name>
-
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
