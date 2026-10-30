@@ -164,4 +164,52 @@ class AuthFlowTest {
                         .header("Authorization", "Bearer token-falso"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void hostRouteWithoutTokenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/host/dashboard"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void guestCannotAccessHostRoute() throws Exception {
+        String email = uniqueEmail();
+        register(email, PASSWORD, "GUEST").andExpect(status().isCreated());
+
+        String body = login(email, PASSWORD).andReturn()
+                .getResponse().getContentAsString();
+        String token = objectMapper.readTree(body).get("token").asText();
+
+        mockMvc.perform(get("/api/host/dashboard")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void hostCanAccessHostRoute() throws Exception {
+        String email = uniqueEmail();
+        register(email, PASSWORD, "HOST").andExpect(status().isCreated());
+
+        String body = login(email, PASSWORD).andReturn()
+                .getResponse().getContentAsString();
+        String token = objectMapper.readTree(body).get("token").asText();
+
+        mockMvc.perform(get("/api/host/dashboard")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void guestCannotAccessAdminRoute() throws Exception {
+        String email = uniqueEmail();
+        register(email, PASSWORD, "GUEST").andExpect(status().isCreated());
+
+        String body = login(email, PASSWORD).andReturn()
+                .getResponse().getContentAsString();
+        String token = objectMapper.readTree(body).get("token").asText();
+
+        mockMvc.perform(get("/api/admin/dashboard")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
 }
