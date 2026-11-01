@@ -1,15 +1,8 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { IdentityDemoService, DemoApiRole } from '../../../../core/services/identity-demo.service';
 import { AuthSessionService, UserRole } from '../../../../core/services/auth-session.service';
-
-interface TestAccount {
-  username: string;
-  email: string;
-  password: string;
-  path: string;
-  role: UserRole;
-}
 
 @Component({
   selector: 'app-login',
@@ -19,85 +12,101 @@ interface TestAccount {
   styleUrl: './login.css',
 })
 export class Login {
-  readonly accounts: TestAccount[] = [
-    { username: 'user', email: 'user@travesia.test', password: 'user123', path: '/inicio', role: 'guest' },
-    { username: 'host', email: 'host@travesia.test', password: 'host123', path: '/anfitrion', role: 'host' },
-    { username: 'admin', email: 'admin@travesia.test', password: 'admin123', path: '/administracion', role: 'admin' },
-  ];
-
-  username = '';
+  email = '';
   password = '';
   error = '';
   showingPasswordRecovery = false;
   recoveryEmail = '';
+  recoveryToken = '';
   newPassword = '';
   confirmNewPassword = '';
   recoveryError = '';
   recoveryMessage = '';
+  passwordResetComplete = false;
 
-  constructor(private readonly router: Router, private readonly session: AuthSessionService) {}
+  constructor(
+    private readonly router: Router,
+    private readonly session: AuthSessionService,
+    private readonly identityDemo: IdentityDemoService,
+  ) {}
 
   enter(): void {
-    const account = this.accounts.find(
-      (item) => item.username === this.username.trim() && this.getAccountPassword(item) === this.password,
-    );
-    if (!account) {
-      this.error = 'Usuario o contraseña incorrectos. Inténtalo de nuevo.';
+    const response = this.identityDemo.login(this.email, this.password);
+    if (!response) {
+      this.error = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
       return;
     }
+
     this.error = '';
-    this.session.signIn(account.username, account.role);
-    void this.router.navigateByUrl(account.path);
+    this.session.signIn(this.email, this.toUserRole(response.role));
+    const destination = response.role === 'HOST'
+      ? '/anfitrion'
+      : response.role === 'ADMIN' ? '/administracion' : '/inicio';
+    void this.router.navigateByUrl(destination);
   }
 
   showPasswordRecovery(): void {
     this.showingPasswordRecovery = true;
+    this.recoveryEmail = this.email;
     this.recoveryError = '';
     this.recoveryMessage = '';
+    this.recoveryToken = '';
+    this.passwordResetComplete = false;
   }
 
   showLogin(): void {
     this.showingPasswordRecovery = false;
     this.recoveryError = '';
     this.recoveryMessage = '';
+    this.recoveryToken = '';
+    this.passwordResetComplete = false;
+  }
+
+  requestPasswordRecovery(): void {
+    this.recoveryError = '';
+    this.recoveryMessage = '';
+    try {
+      const response = this.identityDemo.requestRecovery(this.recoveryEmail);
+      this.recoveryToken = response.token;
+      this.recoveryMessage = 'Token de prueba generado; el backend actual no envía correo.';
+    } catch (error) {
+      this.recoveryError = error instanceof Error ? error.message : 'No se pudo iniciar la recuperación.';
+    }
   }
 
   resetPassword(): void {
     this.recoveryError = '';
     this.recoveryMessage = '';
-    const account = this.accounts.find(
-      (item) => item.email.toLowerCase() === this.recoveryEmail.trim().toLowerCase(),
-    );
-
-    if (!account) {
-      this.recoveryError = 'No encontramos una cuenta de prueba con ese correo.';
-      return;
-    }
-    if (this.newPassword.length < 8) {
-      this.recoveryError = 'La nueva contraseña debe tener al menos 8 caracteres.';
+    if (!this.isBackendPasswordValid(this.newPassword)) {
+      this.recoveryError = 'Usa entre 8 y 72 caracteres, con mayúscula, minúscula, número y símbolo.';
       return;
     }
     if (this.newPassword !== this.confirmNewPassword) {
       this.recoveryError = 'Las contraseñas no coinciden.';
       return;
     }
-
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.passwordStorageKey(account), this.newPassword);
+    if (!this.identityDemo.resetPassword(this.recoveryToken, this.newPassword)) {
+      this.recoveryError = 'El token es inválido, venció o ya fue utilizado.';
+      return;
     }
-    this.recoveryMessage = 'Contraseña actualizada. Ya puedes iniciar sesión con ella.';
-    this.username = account.username;
-    this.password = this.newPassword;
-    this.newPassword = '';
-    this.confirmNewPassword = '';
+
+    this.passwordResetComplete = true;
+    this.recoveryMessage = 'Contraseña actualizada. Ya puedes iniciar sesión.';
   }
 
-  private getAccountPassword(account: TestAccount): string {
-    if (typeof localStorage === 'undefined') return account.password;
-    return localStorage.getItem(this.passwordStorageKey(account)) ?? account.password;
+  private isBackendPasswordValid(value: string): boolean {
+    return value.length >= 8 && value.length <= 72
+      && /[a-z]/.test(value)
+      && /[A-Z]/.test(value)
+      && /\d/.test(value)
+      && /[^a-zA-Z0-9\s]/.test(value);
   }
 
-  private passwordStorageKey(account: TestAccount): string {
-    return `travesia-test-password:${account.username}`;
+  private toUserRole(role: DemoApiRole): UserRole {
+    switch (role) {
+      case 'HOST': return 'host';
+      case 'ADMIN': return 'admin';
+      default: return 'guest';
+    }
   }
 }

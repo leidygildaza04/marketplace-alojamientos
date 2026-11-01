@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthSessionService, UserProfile } from '../../services/auth-session.service';
+import { DemoApiRole, DemoUserResponse, IdentityDemoService } from '../../services/identity-demo.service';
+import { AuthSessionService } from '../../services/auth-session.service';
 
 @Component({
   selector: 'app-profile-panel',
@@ -11,15 +12,17 @@ import { AuthSessionService, UserProfile } from '../../services/auth-session.ser
 })
 export class ProfilePanel {
   private readonly session = inject(AuthSessionService);
+  private readonly identityDemo = inject(IdentityDemoService);
   open = false;
-  profile: UserProfile | null = null;
+  profile: DemoUserResponse | null = null;
   fullName = '';
   phone = '';
   error = '';
   saved = false;
 
   show(): void {
-    this.profile = this.session.getProfile();
+    const email = this.session.email;
+    this.profile = email ? this.identityDemo.getMe(email) : null;
     this.fullName = this.profile?.fullName ?? '';
     this.phone = this.profile?.phone ?? '';
     this.error = '';
@@ -38,19 +41,32 @@ export class ProfilePanel {
       this.error = 'Ingresa tu nombre completo.';
       return;
     }
-    if (this.phone.trim() && !/^\+?[0-9][0-9\s()-]{5,18}$/.test(this.phone.trim())) {
-      this.error = 'Ingresa un número de teléfono válido.';
+    if (this.fullName.trim().length > 150) {
+      this.error = 'El nombre no puede superar 150 caracteres.';
       return;
     }
-    this.session.updateProfile(this.fullName, this.phone);
-    this.profile = this.session.getProfile();
+    if (this.phone.trim() && !/^\+?[0-9][0-9\s().-]{5,29}$/.test(this.phone.trim())) {
+      this.error = 'Ingresa un teléfono válido de máximo 30 caracteres.';
+      return;
+    }
+
+    const email = this.session.email;
+    this.profile = email
+      ? this.identityDemo.updateMe(email, this.fullName, this.phone.trim() || null)
+      : null;
+    if (!this.profile) {
+      this.error = 'No se pudo actualizar el perfil de demostración.';
+      return;
+    }
+    this.fullName = this.profile.fullName;
+    this.phone = this.profile.phone ?? '';
     this.saved = true;
   }
 
   get roleLabel(): string {
-    switch (this.profile?.role) {
-      case 'host': return 'Anfitrión';
-      case 'admin': return 'Administrador';
+    switch (this.profile?.role as DemoApiRole | undefined) {
+      case 'HOST': return 'Anfitrión';
+      case 'ADMIN': return 'Administrador';
       default: return 'Huésped';
     }
   }
