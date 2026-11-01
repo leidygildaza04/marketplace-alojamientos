@@ -23,34 +23,21 @@ describe('Registro', () => {
     expect(component).toBeTruthy();
   });
 
-  it('requires the required personal and account details', () => {
+  it('requires the fields accepted by the guest registration contract', () => {
     expect(component.form.invalid).toBeTrue();
     expect(Object.keys(component.form.controls)).toEqual([
       'nombres',
       'apellidos',
-      'telefono',
       'correo',
-      'fechaNacimiento',
       'contrasenia',
       'confirmarContrasenia',
     ]);
   });
 
-  it('does not allow people under 18 to register', () => {
-    const underageDate = new Date();
-    underageDate.setFullYear(underageDate.getFullYear() - 17);
+  it('enforces the password policy used by registration', () => {
+    component.form.controls.contrasenia.setValue('password123');
 
-    const dateValue = [
-      underageDate.getFullYear(),
-      String(underageDate.getMonth() + 1).padStart(2, '0'),
-      String(underageDate.getDate()).padStart(2, '0'),
-    ].join('-');
-
-    component.form.controls.fechaNacimiento.setValue(dateValue);
-
-    expect(
-      component.form.controls.fechaNacimiento.hasError('underage'),
-    ).toBeTrue();
+    expect(component.form.controls.contrasenia.hasError('pattern')).toBeTrue();
   });
 
   it('requires the password confirmation to match', () => {
@@ -64,12 +51,6 @@ describe('Registro', () => {
     component.form.controls.correo.setValue('correo-invalido');
 
     expect(component.form.controls.correo.hasError('email')).toBeTrue();
-  });
-
-  it('rejects a phone number with invalid characters', () => {
-    component.form.controls.telefono.setValue('abc123');
-
-    expect(component.form.controls.telefono.hasError('pattern')).toBeTrue();
   });
 
   it('requires names to contain at least two characters', () => {
