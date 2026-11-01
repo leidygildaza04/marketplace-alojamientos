@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.identity.security;
 
+import co.edu.unbosque.marketplace.identity.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -19,9 +20,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final String BEARER = "Bearer ";
 
     private final JwtService jwtService;
+    private final UserRepository users;
 
-    public JwtAuthFilter(JwtService jwtService) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository users) {
         this.jwtService = jwtService;
+        this.users = users;
     }
 
     @Override
@@ -31,9 +34,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith(BEARER)) {
             try {
                 Claims claims = jwtService.parse(header.substring(BEARER.length()));
-                var authority = new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class));
-                var auth = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, List.of(authority));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                String subject = claims.getSubject();
+                var account = users.findById(Long.valueOf(subject));
+                if (account.isPresent() && account.get().isActive()) {
+                    var authority = new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class));
+                    var auth = new UsernamePasswordAuthenticationToken(subject, null, List.of(authority));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    SecurityContextHolder.clearContext();
+                }
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
             }
