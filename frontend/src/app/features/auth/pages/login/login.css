@@ -178,6 +178,30 @@ h1 {
   font-size: 0.8rem;
 }
 
+.form-success {
+  margin: 4px 0;
+  color: #286a37;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--summer-avocado, var(--pantone-sceptre-red));
+  font: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 @media (max-width: 480px) {
   .access-page {
     padding: 18px 14px;

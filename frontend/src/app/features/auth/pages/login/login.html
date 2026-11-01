@@ -1,18 +1,37 @@
 <main class="access-page">
   <section class="access-card" aria-labelledby="access-title">
     <p class="eyebrow"><span aria-hidden="true"></span> TRAVESÍA · ALOJAMIENTOS</p>
-    <h1 id="access-title">Qué bueno verte de nuevo</h1>
-    <p class="intro">Inicia sesión y encuentra tu próximo destino.</p>
+    @if (showingPasswordRecovery) {
+      <h1 id="access-title">Recupera tu cuenta</h1>
+      <p class="intro">Escribe tu correo y elige una nueva contraseña.</p>
 
-    <form class="login-form" (ngSubmit)="enter()">
-      <label for="username">Usuario</label>
-      <input id="username" name="username" [(ngModel)]="username" autocomplete="username" required />
-      <label for="password">Clave</label>
-      <input id="password" name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required />
-      @if (error) { <p class="form-error" role="alert">{{ error }}</p> }
-      <button class="enter-button" type="submit">Entrar</button>
-    </form>
+      <form class="login-form" (ngSubmit)="resetPassword()">
+        <label for="recovery-email">Correo electrónico</label>
+        <input id="recovery-email" name="recoveryEmail" [(ngModel)]="recoveryEmail" type="email" autocomplete="email" required />
+        <label for="new-password">Nueva contraseña</label>
+        <input id="new-password" name="newPassword" [(ngModel)]="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+        <label for="confirm-new-password">Repite la nueva contraseña</label>
+        <input id="confirm-new-password" name="confirmNewPassword" [(ngModel)]="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
+        @if (recoveryError) { <p class="form-error" role="alert">{{ recoveryError }}</p> }
+        @if (recoveryMessage) { <p class="form-success" role="status">{{ recoveryMessage }}</p> }
+        <button class="enter-button" type="submit">Actualizar contraseña</button>
+      </form>
+      <p class="access-note"><button class="text-button" type="button" (click)="showLogin()">Volver a iniciar sesión</button></p>
+    } @else {
+      <h1 id="access-title">Qué bueno verte de nuevo</h1>
+      <p class="intro">Inicia sesión y encuentra tu próximo destino.</p>
 
-    <p class="access-note">¿Aún no tienes cuenta? <a routerLink="/registro">Crear cuenta</a> o <a routerLink="/registro-anfitrion">publicar un alojamiento</a>.</p>
+      <form class="login-form" (ngSubmit)="enter()">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" [(ngModel)]="username" autocomplete="username" required />
+        <label for="password">Clave</label>
+        <input id="password" name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required />
+        @if (error) { <p class="form-error" role="alert">{{ error }}</p> }
+        <button class="enter-button" type="submit">Entrar</button>
+      </form>
+
+      <p class="access-note"><button class="text-button" type="button" (click)="showPasswordRecovery()">¿Olvidaste tu contraseña?</button></p>
+      <p class="access-note">¿Aún no tienes cuenta? <a routerLink="/registro">Crear cuenta</a> o <a routerLink="/registro-anfitrion">publicar un alojamiento</a>.</p>
+    }
   </section>
 </main>
