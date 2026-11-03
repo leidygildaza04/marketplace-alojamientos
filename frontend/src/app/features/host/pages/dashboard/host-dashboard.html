@@ -1,37 +1,297 @@
+
 <main class="host-page">
-  <header class="host-nav"><a routerLink="/inicio" class="brand"><span class="brand-mark">T</span><span><strong>TRAVESÍA</strong><small>Área de anfitrión</small></span></a><nav aria-label="Navegación anfitrión"><a routerLink="/inicio">Explorar</a><a routerLink="/anfitrion" fragment="publicaciones">Publicaciones</a><a routerLink="/anfitrion" fragment="disponibilidad">Disponibilidad</a><app-profile-panel /><a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a></nav></header>
+  <header class="host-nav">
+    <a routerLink="/inicio" class="brand">
+      <span class="brand-mark">T</span>
+      <span>
+        <strong>TRAVESÍA</strong>
+        <small>Área de anfitrión</small>
+      </span>
+    </a>
+
+    <nav aria-label="Navegación anfitrión">
+      <a routerLink="/inicio">Explorar</a>
+      <a routerLink="/anfitrion" fragment="publicaciones">Publicaciones</a>
+      <a routerLink="/anfitrion" fragment="disponibilidad">Disponibilidad</a>
+      <app-profile-panel />
+      <a class="logout-link" routerLink="/login" (click)="cerrarSesion()">Cerrar sesión</a>
+    </nav>
+  </header>
+
   <section class="host-content">
-    <p class="eyebrow">PANEL DEL ANFITRIÓN</p><h1>Tu espacio, bien cuidado.</h1><p class="lead">Administra tus publicaciones y periodos de disponibilidad.</p>
-    @if (aviso) { <p class="notice" role="status">{{ aviso }}</p> }
-    @if (error) { <p class="error" role="alert">{{ error }}</p> }
-    <div class="metric-grid"><article><span>Publicaciones activas</span><strong>{{ activeCount }}</strong></article><article><span>Borradores</span><strong>{{ draftCount }}</strong></article><article><span>En pausa</span><strong>{{ pausedCount }}</strong></article></div>
+    <p class="eyebrow">PANEL DEL ANFITRIÓN</p>
+    <h1>Tu espacio, bien cuidado.</h1>
+    <p class="lead">Administra tus publicaciones y periodos de disponibilidad.</p>
+
+    @if (aviso) {
+      <p class="notice" role="status">{{ aviso }}</p>
+    }
+
+    @if (error) {
+      <p class="error" role="alert">{{ error }}</p>
+    }
+
+    <div class="metric-grid">
+      <article>
+        <span>Publicaciones activas</span>
+        <strong>{{ activeCount }}</strong>
+      </article>
+      <article>
+        <span>Borradores</span>
+        <strong>{{ draftCount }}</strong>
+      </article>
+      <article>
+        <span>En pausa</span>
+        <strong>{{ pausedCount }}</strong>
+      </article>
+    </div>
 
     <section class="content-card" id="publicaciones" aria-labelledby="listings-title">
-      <div class="section-heading"><div><p class="eyebrow">TU OFERTA</p><h2 id="listings-title">Publicaciones</h2></div><button class="primary-button" type="button" (click)="mostrarFormulario = !mostrarFormulario">{{ mostrarFormulario ? 'Cerrar formulario' : 'Crear publicación' }}</button></div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">TU OFERTA</p>
+          <h2 id="listings-title">Publicaciones</h2>
+        </div>
+
+        <button
+          class="primary-button"
+          type="button"
+          (click)="mostrarFormulario = !mostrarFormulario"
+        >
+          {{ mostrarFormulario ? 'Cerrar formulario' : 'Crear publicación' }}
+        </button>
+      </div>
+
       @if (mostrarFormulario) {
         <form class="listing-form" (ngSubmit)="crearBorrador()">
-          <label>Título<input name="title" [(ngModel)]="draft.title" required /></label><label>Ciudad<input name="city" [(ngModel)]="draft.city" required /></label>
-          <label>Tipo<select name="type" [(ngModel)]="draft.type"><option>Apartamento</option><option>Cabaña</option><option>Casa</option></select></label><label>Capacidad<input type="number" name="capacity" [(ngModel)]="draft.capacity" min="1" required /></label>
-          <label>Precio por noche (COP)<input type="number" name="price" [(ngModel)]="draft.pricePerNight" min="1" step="10000" required /></label><label>URL de imagen<input type="url" name="image" [(ngModel)]="draft.image" placeholder="https://…" /></label>
-          <label class="wide">Descripción<textarea name="description" [(ngModel)]="draft.description" rows="3"></textarea></label>
-          <label>Servicios (separados por coma)<input name="amenities" [(ngModel)]="draft.amenities" placeholder="Wi-Fi, Cocina equipada" /></label><label>Reglas (separadas por coma)<input name="rules" [(ngModel)]="draft.rules" placeholder="No fumar, Sin fiestas" /></label>
-          <p class="form-note wide">La publicación se guardará como borrador. Completa la descripción, imagen, servicios y reglas para activarla.</p><button class="primary-button wide" type="submit">Guardar borrador</button>
+
+          <label>
+            Título *
+            <input
+              type="text"
+              name="title"
+              [(ngModel)]="draft.title"
+              placeholder="Ej. Cabaña en las montañas"
+              required
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            Ciudad o ubicación *
+            <input
+              type="text"
+              name="city"
+              [(ngModel)]="draft.city"
+              placeholder="Ej. Bogotá"
+              required
+            />
+          </label>
+
+          <label>
+            Tipo de alojamiento *
+            <select
+              name="type"
+              [(ngModel)]="draft.type"
+              required
+            >
+              <option value="" disabled>Selecciona un tipo</option>
+              <option value="Apartamento">Apartamento</option>
+              <option value="Cabaña">Cabaña</option>
+              <option value="Casa">Casa</option>
+            </select>
+          </label>
+
+          <label>
+            Capacidad de huéspedes *
+            <input
+              type="number"
+              name="capacity"
+              [(ngModel)]="draft.capacity"
+              min="1"
+              step="1"
+              required
+            />
+          </label>
+
+          <label>
+            Precio por noche (COP) *
+            <input
+              type="number"
+              name="price"
+              [(ngModel)]="draft.pricePerNight"
+              min="1"
+              step="1000"
+              required
+            />
+          </label>
+
+          <label>
+            URL de imagen *
+            <input
+              type="url"
+              name="image"
+              [(ngModel)]="draft.image"
+              placeholder="https://ejemplo.com/imagen.jpg"
+              required
+            />
+          </label>
+
+          <label class="wide">
+            Descripción *
+            <textarea
+              name="description"
+              [(ngModel)]="draft.description"
+              rows="3"
+              placeholder="Describe tu alojamiento..."
+              required
+              maxlength="1000"
+            ></textarea>
+          </label>
+
+          <label>
+            Servicios *
+            <input
+              type="text"
+              name="amenities"
+              [(ngModel)]="draft.amenities"
+              placeholder="Wi-Fi, Cocina equipada"
+              required
+            />
+          </label>
+
+          <label>
+            Reglas *
+            <input
+              type="text"
+              name="rules"
+              [(ngModel)]="draft.rules"
+              placeholder="No fumar, Sin fiestas"
+              required
+            />
+          </label>
+
+          <p class="form-note wide">
+            Los campos marcados con * son obligatorios.
+            La publicación se guardará como borrador.
+            Completa toda la información para poder activarla.
+          </p>
+
+          <button class="primary-button wide" type="submit">
+            Guardar borrador
+          </button>
         </form>
       }
+
       <div class="listing-list">
         @for (item of listings; track item.id) {
-          <article class="listing-row"><div class="listing-thumb">{{ item.type.slice(0, 1) }}</div><div class="listing-copy"><strong>{{ item.title }}</strong><span>{{ item.city }} · {{ item.capacity }} huéspedes · {{ item.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}/noche</span></div><span class="listing-status" [attr.data-status]="item.status">{{ item.status }}</span>@if (item.status !== 'BLOQUEADA') { <button class="text-button" type="button" (click)="cambiarEstado(item)">{{ item.status === 'ACTIVA' ? 'Pausar' : 'Activar' }}</button> }
-        </article>
+          <article class="listing-row">
+            <div class="listing-thumb">
+              {{ item.type.slice(0, 1) }}
+            </div>
+
+            <div class="listing-copy">
+              <strong>{{ item.title }}</strong>
+              <span>
+                {{ item.city }} · {{ item.capacity }} huéspedes ·
+                {{ item.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}/noche
+              </span>
+            </div>
+
+            <span
+              class="listing-status"
+              [attr.data-status]="item.status"
+            >
+              {{ item.status }}
+            </span>
+
+            @if (item.status !== 'BLOQUEADA') {
+              <button
+                class="text-button"
+                type="button"
+                (click)="cambiarEstado(item)"
+              >
+                {{ item.status === 'ACTIVA' ? 'Pausar' : 'Activar' }}
+              </button>
+            }
+          </article>
         }
       </div>
     </section>
 
-    <section class="content-card" id="disponibilidad" aria-labelledby="availability-title">
-      <div class="section-heading"><div><p class="eyebrow">CALENDARIO</p><h2 id="availability-title">Periodos disponibles</h2></div></div>
-      <p class="section-description">Los intervalos usan [llegada, salida): la fecha de salida no ocupa una noche adicional.</p>
-      <form class="period-form" (ngSubmit)="agregarPeriodo()"><label>Alojamiento<select name="selectedListingId" [(ngModel)]="selectedListingId"><option value="" disabled>Selecciona uno</option>@for (item of listings; track item.id) { <option [value]="item.id">{{ item.title }}</option> }</select></label><label>Llegada<input type="date" name="periodStart" [(ngModel)]="periodStart" required /></label><label>Salida<input type="date" name="periodEnd" [(ngModel)]="periodEnd" [min]="periodStart" required /></label><button class="primary-button" type="submit">Agregar periodo</button></form>
-      @if (periods.length) { <div class="period-list">@for (period of periods; track period.propertyId + period.start) { <div><span><strong>{{ period.propertyTitle }}</strong><br />{{ period.start }} → {{ period.end }}</span><strong>{{ period.status }}</strong></div> }</div> } @else { <p class="empty-note">Aún no hay periodos disponibles.</p> }
+    <section
+      class="content-card"
+      id="disponibilidad"
+      aria-labelledby="availability-title"
+    >
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CALENDARIO</p>
+          <h2 id="availability-title">Periodos disponibles</h2>
+        </div>
+      </div>
+
+      <p class="section-description">
+        Los intervalos usan [llegada, salida): la fecha de salida no ocupa una noche adicional.
+      </p>
+
+      <form class="period-form" (ngSubmit)="agregarPeriodo()">
+        <label>
+          Alojamiento
+          <select
+            name="selectedListingId"
+            [(ngModel)]="selectedListingId"
+            required
+          >
+            <option value="" disabled>Selecciona uno</option>
+            @for (item of listings; track item.id) {
+              <option [value]="item.id">{{ item.title }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Llegada
+          <input
+            type="date"
+            name="periodStart"
+            [(ngModel)]="periodStart"
+            required
+          />
+        </label>
+
+        <label>
+          Salida
+          <input
+            type="date"
+            name="periodEnd"
+            [(ngModel)]="periodEnd"
+            [min]="periodStart"
+            required
+          />
+        </label>
+
+        <button class="primary-button" type="submit">
+          Agregar periodo
+        </button>
+      </form>
+
+      @if (periods.length) {
+        <div class="period-list">
+          @for (period of periods; track period.propertyId + period.start) {
+            <div>
+              <span>
+                <strong>{{ period.propertyTitle }}</strong>
+                <br />
+                {{ period.start }} → {{ period.end }}
+              </span>
+              <strong>{{ period.status }}</strong>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty-note">Aún no hay periodos disponibles.</p>
+      }
     </section>
   </section>
 </main>
-
