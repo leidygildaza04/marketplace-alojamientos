@@ -22,24 +22,20 @@ describe('RegistroAnfitrion', () => {
     expect(component).toBeTruthy();
   });
 
-  it('requires host identity and contact details', () => {
+  it('requires the fields accepted by the host registration contract', () => {
     expect(component.form.invalid).toBeTrue();
     expect(Object.keys(component.form.controls)).toEqual([
       'nombres',
       'apellidos',
-      'cedula',
-      'direccion',
-      'telefono',
       'correo',
-      'fechaNacimiento',
       'contrasenia',
       'confirmarContrasenia',
     ]);
   });
 
-  it('requires a numeric identity document', () => {
-    component.form.controls.cedula.setValue('ABC123');
+  it('enforces the password policy for the host account', () => {
+    component.form.controls.contrasenia.setValue('password123');
 
-    expect(component.form.controls.cedula.hasError('pattern')).toBeTrue();
+    expect(component.form.controls.contrasenia.hasError('pattern')).toBeTrue();
   });
 });
