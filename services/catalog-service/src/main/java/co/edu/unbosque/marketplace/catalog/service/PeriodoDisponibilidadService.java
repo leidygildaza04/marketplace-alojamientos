@@ -6,6 +6,7 @@ import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadRequest;
 import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadResponse;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,11 @@ public class PeriodoDisponibilidadService {
 
     public PeriodoDisponibilidadResponse crear(Long alojamientoId, PeriodoDisponibilidadRequest request) {
         Alojamiento alojamiento = verificarAlojamiento(alojamientoId);
+        validarFechas(request);
+        if (periodos.existsByAlojamientoIdAndFechaInicioLessThanEqualAndFechaFinGreaterThanEqual(
+                alojamientoId, request.fechaFin(), request.fechaInicio())) {
+            throw conflictoSuperposicion();
+        }
         PeriodoDisponibilidad periodo = new PeriodoDisponibilidad(
                 alojamiento, request.fechaInicio(), request.fechaFin());
         return PeriodoDisponibilidadResponse.desde(periodos.save(periodo));
@@ -42,6 +48,11 @@ public class PeriodoDisponibilidadService {
     public PeriodoDisponibilidadResponse editar(Long alojamientoId, Long periodoId,
             PeriodoDisponibilidadRequest request) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
+        validarFechas(request);
+        if (periodos.existsByAlojamientoIdAndIdNotAndFechaInicioLessThanEqualAndFechaFinGreaterThanEqual(
+                alojamientoId, periodoId, request.fechaFin(), request.fechaInicio())) {
+            throw conflictoSuperposicion();
+        }
         periodo.actualizarFechas(request.fechaInicio(), request.fechaFin());
         return PeriodoDisponibilidadResponse.desde(periodos.save(periodo));
     }
@@ -49,6 +60,24 @@ public class PeriodoDisponibilidadService {
     public void eliminar(Long alojamientoId, Long periodoId) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
         periodos.delete(periodo);
+    }
+
+    private void validarFechas(PeriodoDisponibilidadRequest request) {
+        if (request == null || request.fechaInicio() == null || request.fechaFin() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Las fechas de inicio y fin son obligatorias");
+        }
+        LocalDate inicio = request.fechaInicio();
+        LocalDate fin = request.fechaFin();
+        if (!inicio.isBefore(fin)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La fecha de inicio debe ser anterior a la fecha de fin");
+        }
+    }
+
+    private ResponseStatusException conflictoSuperposicion() {
+        return new ResponseStatusException(HttpStatus.CONFLICT,
+                "El periodo se superpone con otro periodo del mismo alojamiento");
     }
 
     private Alojamiento verificarAlojamiento(Long alojamientoId) {

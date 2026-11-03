@@ -78,4 +78,56 @@ class PeriodoDisponibilidadCrudTest {
         mockMvc.perform(get("/api/v1/alojamientos/999999/periodos-disponibilidad"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void rechazaFechasAusentesIgualesOInvertidas() throws Exception {
+        String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":null,\"fechaFin\":\"2026-12-05\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-05\",\"fechaFin\":\"2026-12-05\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-10\",\"fechaFin\":\"2026-12-05\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rechazaCrearPeriodoSuperpuesto() throws Exception {
+        String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-10\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-10\",\"fechaFin\":\"2026-12-15\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void rechazaEditarCuandoGeneraSuperposicion() throws Exception {
+        String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
+        String primer = mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-05\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String segundo = mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-10\",\"fechaFin\":\"2026-12-15\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        var mapper = com.fasterxml.jackson.databind.json.JsonMapper.builder().build();
+        long segundoId = mapper.readTree(segundo).get("id").asLong();
+        mockMvc.perform(put(ruta + "/" + segundoId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-04\",\"fechaFin\":\"2026-12-12\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void permitePeriodosSeparadosYNoConfundeAlojamientos() throws Exception {
+        String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-05\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-06\",\"fechaFin\":\"2026-12-10\"}"))
+                .andExpect(status().isCreated());
+    }
 }
