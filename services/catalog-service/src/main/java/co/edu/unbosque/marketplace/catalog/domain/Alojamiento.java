@@ -9,5 +9,14 @@ public class Alojamiento {
  @Column(nullable=false) private String titulo;
  @Column(name="estado_publicacion", nullable=false) private String estado;
  protected Alojamiento() {}
- public Long getId(){return id;} public Long getHostId(){return hostId;} public String getEstado(){return estado;} public void setEstado(String estado){this.estado=estado;}
+ public Alojamiento(Long hostId, String titulo, String estado) {
+  this.hostId = hostId;
+  this.titulo = titulo;
+  this.estado = estado;
+ }
+ public Long getId(){return id;}
+ public Long getHostId(){return hostId;}
+ public String getTitulo(){return titulo;}
+ public String getEstado(){return estado;}
+ public void setEstado(String estado){this.estado=estado;}
 }

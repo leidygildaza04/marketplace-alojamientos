@@ -47,8 +47,91 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+  /alojamientos/{alojamientoId}/periodos-disponibilidad:
+    parameters:
+      - in: path
+        name: alojamientoId
+        required: true
+        schema: { type: integer, format: int64 }
+    get:
+      tags: [Disponibilidad]
+      summary: Listar periodos de disponibilidad de un alojamiento
+      operationId: listarPeriodosDisponibilidad
+      responses:
+        '200':
+          description: Lista de periodos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PeriodoDisponibilidad' }
+        '404': { description: Alojamiento no encontrado }
+    post:
+      tags: [Disponibilidad]
+      summary: Crear un periodo de disponibilidad
+      operationId: crearPeriodoDisponibilidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PeriodoDisponibilidadRequest' }
+      responses:
+        '201':
+          description: Periodo creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeriodoDisponibilidad' }
+        '404': { description: Alojamiento no encontrado }
+  /alojamientos/{alojamientoId}/periodos-disponibilidad/{periodoId}:
+    parameters:
+      - in: path
+        name: alojamientoId
+        required: true
+        schema: { type: integer, format: int64 }
+      - in: path
+        name: periodoId
+        required: true
+        schema: { type: integer, format: int64 }
+    put:
+      tags: [Disponibilidad]
+      summary: Editar un periodo de disponibilidad
+      operationId: editarPeriodoDisponibilidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PeriodoDisponibilidadRequest' }
+      responses:
+        '200':
+          description: Periodo actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PeriodoDisponibilidad' }
+        '404': { description: Periodo o alojamiento no encontrado }
+    delete:
+      tags: [Disponibilidad]
+      summary: Eliminar un periodo de disponibilidad
+      operationId: eliminarPeriodoDisponibilidad
+      responses:
+        '204': { description: Periodo eliminado }
+        '404': { description: Periodo o alojamiento no encontrado }
 components:
   schemas:
+    PeriodoDisponibilidadRequest:
+      type: object
+      required: [fechaInicio, fechaFin]
+      properties:
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+    PeriodoDisponibilidad:
+      type: object
+      required: [id, alojamientoId, fechaInicio, fechaFin, estado]
+      properties:
+        id: { type: integer, format: int64 }
+        alojamientoId: { type: integer, format: int64 }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        estado: { type: string, enum: [DISPONIBLE, RESERVADO] }
     Disponibilidad:
       type: object
       required: [alojamientoId, fechaInicio, fechaFin, disponible]
