@@ -25,8 +25,7 @@ public class AlojamientoService {
                 request.direccion(),
                 request.ciudad(),
                 request.precioNoche(),
-                request.capacidad(),
-                "BORRADOR"
+                request.capacidad()
         );
 
         return repository.save(alojamiento);

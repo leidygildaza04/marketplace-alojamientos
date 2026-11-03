@@ -45,8 +45,7 @@ public class Alojamiento {
             String direccion,
             String ciudad,
             BigDecimal precioNoche,
-            Integer capacidad,
-            String estado
+            Integer capacidad
     ) {
         this.hostId = hostId;
         this.titulo = titulo;
@@ -55,12 +54,13 @@ public class Alojamiento {
         this.ciudad = ciudad;
         this.precioNoche = precioNoche;
         this.capacidad = capacidad;
-        this.estado = estado;
+        this.estado = "BORRADOR";
     }
 
-    // Constructor anterior para mantener compatibilidad con las pruebas existentes.
     public Alojamiento(Long hostId, String titulo, String estado) {
-        this(hostId, titulo, null, null, null, null, null, estado);
+        this.hostId = hostId;
+        this.titulo = titulo;
+        this.estado = estado;
     }
 
     public Long getId() {
