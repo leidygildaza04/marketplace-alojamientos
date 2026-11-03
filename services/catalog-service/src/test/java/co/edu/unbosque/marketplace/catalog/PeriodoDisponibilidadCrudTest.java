@@ -1,5 +1,8 @@
 package co.edu.unbosque.marketplace.catalog;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -7,13 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.edu.unbosque.marketplace.catalog.client.BookingReservationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +38,7 @@ class PeriodoDisponibilidadCrudTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private AlojamientoRepository alojamientos;
+    @MockBean private BookingReservationClient reservas;
     private Long alojamientoId;
 
     @BeforeEach
@@ -107,9 +114,9 @@ class PeriodoDisponibilidadCrudTest {
     @Test
     void rechazaEditarCuandoGeneraSuperposicion() throws Exception {
         String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
-        String primer = mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-05\"}"))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+                .andExpect(status().isCreated());
         String segundo = mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fechaInicio\":\"2026-12-10\",\"fechaFin\":\"2026-12-15\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
@@ -129,5 +136,25 @@ class PeriodoDisponibilidadCrudTest {
         mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fechaInicio\":\"2026-12-06\",\"fechaFin\":\"2026-12-10\"}"))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void impideEditarYEliminarUnPeriodoConReservaConfirmada() throws Exception {
+        String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
+        String respuesta = mockMvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-10\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long periodoId = com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                .readTree(respuesta).get("id").asLong();
+
+        when(reservas.existeReservaConfirmada(eq(alojamientoId),
+                any(LocalDate.class), any(LocalDate.class))).thenReturn(true);
+
+        mockMvc.perform(put(ruta + "/" + periodoId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fechaInicio\":\"2026-12-12\",\"fechaFin\":\"2026-12-18\"}"))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(delete(ruta + "/" + periodoId))
+                .andExpect(status().isConflict());
     }
 }

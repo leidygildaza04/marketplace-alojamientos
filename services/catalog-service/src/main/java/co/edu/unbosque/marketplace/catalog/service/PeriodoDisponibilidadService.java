@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.catalog.service;
 
+import co.edu.unbosque.marketplace.catalog.client.BookingReservationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.domain.PeriodoDisponibilidad;
 import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadRequest;
@@ -8,9 +9,11 @@ import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -19,11 +22,13 @@ public class PeriodoDisponibilidadService {
 
     private final AlojamientoRepository alojamientos;
     private final PeriodoDisponibilidadRepository periodos;
+    private final BookingReservationClient reservas;
 
     public PeriodoDisponibilidadService(AlojamientoRepository alojamientos,
-            PeriodoDisponibilidadRepository periodos) {
+            PeriodoDisponibilidadRepository periodos, BookingReservationClient reservas) {
         this.alojamientos = alojamientos;
         this.periodos = periodos;
+        this.reservas = reservas;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +54,16 @@ public class PeriodoDisponibilidadService {
             PeriodoDisponibilidadRequest request) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
         validarFechas(request);
+
+        // Un periodo que ya tiene una reserva confirmada no puede modificarse.
+        validarSinReservas(alojamientoId, periodo.getFechaInicio(), periodo.getFechaFin());
+
+        // Tampoco se permite mover un periodo disponible sobre fechas ya reservadas.
+        if (!Objects.equals(periodo.getFechaInicio(), request.fechaInicio())
+                || !Objects.equals(periodo.getFechaFin(), request.fechaFin())) {
+            validarSinReservas(alojamientoId, request.fechaInicio(), request.fechaFin());
+        }
+
         if (periodos.existsByAlojamientoIdAndIdNotAndFechaInicioLessThanEqualAndFechaFinGreaterThanEqual(
                 alojamientoId, periodoId, request.fechaFin(), request.fechaInicio())) {
             throw conflictoSuperposicion();
@@ -59,7 +74,22 @@ public class PeriodoDisponibilidadService {
 
     public void eliminar(Long alojamientoId, Long periodoId) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
+        validarSinReservas(alojamientoId, periodo.getFechaInicio(), periodo.getFechaFin());
         periodos.delete(periodo);
+    }
+
+    private void validarSinReservas(Long alojamientoId, LocalDate fechaInicio, LocalDate fechaFin) {
+        final boolean existe;
+        try {
+            existe = reservas.existeReservaConfirmada(alojamientoId, fechaInicio, fechaFin);
+        } catch (RestClientException ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "No fue posible verificar las reservas. Intenta nuevamente más tarde.", ex);
+        }
+        if (existe) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El periodo está asociado a una reserva confirmada y no puede modificarse ni eliminarse");
+        }
     }
 
     private void validarFechas(PeriodoDisponibilidadRequest request) {
