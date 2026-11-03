@@ -41,6 +41,9 @@ public class PeriodoDisponibilidad {
     @Column(nullable = false, length = 20)
     private Estado estado = Estado.DISPONIBLE;
 
+    @Column(name = "id_reserva", unique = true)
+    private Long reservaId;
+
     protected PeriodoDisponibilidad() {
     }
 
@@ -56,9 +59,15 @@ public class PeriodoDisponibilidad {
     public LocalDate getFechaInicio() { return fechaInicio; }
     public LocalDate getFechaFin() { return fechaFin; }
     public Estado getEstado() { return estado; }
+    public Long getReservaId() { return reservaId; }
 
     public void actualizarFechas(LocalDate fechaInicio, LocalDate fechaFin) {
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
+    }
+
+    public void cambiarEstado(Estado estado, Long reservaId) {
+        this.estado = estado;
+        this.reservaId = reservaId;
     }
 }

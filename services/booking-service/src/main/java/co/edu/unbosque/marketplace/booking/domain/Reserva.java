@@ -50,4 +50,8 @@ public class Reserva {
     public LocalDate getCheckIn() { return checkIn; }
     public LocalDate getCheckOut() { return checkOut; }
     public String getEstado() { return estado; }
+
+    public void cambiarEstado(String estado) {
+        this.estado = estado;
+    }
 }

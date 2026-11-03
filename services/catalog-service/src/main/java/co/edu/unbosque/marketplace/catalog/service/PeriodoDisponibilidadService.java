@@ -53,17 +53,13 @@ public class PeriodoDisponibilidadService {
     public PeriodoDisponibilidadResponse editar(Long alojamientoId, Long periodoId,
             PeriodoDisponibilidadRequest request) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
+        validarPeriodoDisponible(periodo);
         validarFechas(request);
-
-        // Un periodo que ya tiene una reserva confirmada no puede modificarse.
         validarSinReservas(alojamientoId, periodo.getFechaInicio(), periodo.getFechaFin());
-
-        // Tampoco se permite mover un periodo disponible sobre fechas ya reservadas.
         if (!Objects.equals(periodo.getFechaInicio(), request.fechaInicio())
                 || !Objects.equals(periodo.getFechaFin(), request.fechaFin())) {
             validarSinReservas(alojamientoId, request.fechaInicio(), request.fechaFin());
         }
-
         if (periodos.existsByAlojamientoIdAndIdNotAndFechaInicioLessThanEqualAndFechaFinGreaterThanEqual(
                 alojamientoId, periodoId, request.fechaFin(), request.fechaInicio())) {
             throw conflictoSuperposicion();
@@ -74,8 +70,17 @@ public class PeriodoDisponibilidadService {
 
     public void eliminar(Long alojamientoId, Long periodoId) {
         PeriodoDisponibilidad periodo = buscarPeriodo(alojamientoId, periodoId);
+        validarPeriodoDisponible(periodo);
         validarSinReservas(alojamientoId, periodo.getFechaInicio(), periodo.getFechaFin());
         periodos.delete(periodo);
+    }
+
+    private void validarPeriodoDisponible(PeriodoDisponibilidad periodo) {
+        if (periodo.getEstado() == PeriodoDisponibilidad.Estado.RESERVADO
+                || periodo.getReservaId() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El periodo está reservado y no puede modificarse ni eliminarse");
+        }
     }
 
     private void validarSinReservas(Long alojamientoId, LocalDate fechaInicio, LocalDate fechaFin) {
@@ -97,9 +102,7 @@ public class PeriodoDisponibilidadService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Las fechas de inicio y fin son obligatorias");
         }
-        LocalDate inicio = request.fechaInicio();
-        LocalDate fin = request.fechaFin();
-        if (!inicio.isBefore(fin)) {
+        if (!request.fechaInicio().isBefore(request.fechaFin())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La fecha de inicio debe ser anterior a la fecha de fin");
         }
