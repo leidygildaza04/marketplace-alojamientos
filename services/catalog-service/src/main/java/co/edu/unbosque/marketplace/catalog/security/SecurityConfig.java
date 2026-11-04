@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.catalog.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,7 +17,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtService jwtService
+            JwtService jwtService,
+            @Value("${app.internal.secret}") String internalSecret
     ) throws Exception {
 
         http
@@ -37,6 +39,10 @@ public class SecurityConfig {
                 exception.authenticationEntryPoint(
                     new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
                 )
+            )
+            .addFilterBefore(
+                new InternalSecretFilter(internalSecret),
+                UsernamePasswordAuthenticationFilter.class
             )
             .addFilterBefore(
                 new JwtAuthFilter(jwtService),

@@ -10,10 +10,14 @@ import org.springframework.web.client.RestClient;
 public class CatalogPeriodClient {
 
     private final RestClient restClient;
+    private final String internalSecret;
 
     public CatalogPeriodClient(
-            @Value("${services.catalog.base-url:http://localhost:8082}") String baseUrl) {
+            @Value("${services.catalog.base-url:http://localhost:8082}") String baseUrl,
+            @Value("${app.internal.secret}") String internalSecret) {
+
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+        this.internalSecret = internalSecret;
     }
 
     public void reservar(Long alojamientoId, Long reservaId,
@@ -25,6 +29,7 @@ public class CatalogPeriodClient {
                         .queryParam("fechaInicio", fechaInicio)
                         .queryParam("fechaFin", fechaFin)
                         .build(alojamientoId))
+                .header("X-Internal-Secret", internalSecret)
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -35,6 +40,7 @@ public class CatalogPeriodClient {
                         .path("/internal/alojamientos/{alojamientoId}/periodos-disponibilidad/liberar")
                         .queryParam("reservaId", reservaId)
                         .build(alojamientoId))
+                .header("X-Internal-Secret", internalSecret)
                 .retrieve()
                 .toBodilessEntity();
     }

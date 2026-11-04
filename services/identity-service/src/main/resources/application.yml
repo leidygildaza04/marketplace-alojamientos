@@ -25,3 +25,5 @@ app:
   services:
     catalog-url: ${CATALOG_SERVICE_URL:http://localhost:8082}
     booking-url: ${BOOKING_SERVICE_URL:http://localhost:8083}
+  internal:
+    secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
