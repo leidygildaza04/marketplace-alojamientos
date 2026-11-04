@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.identity.service;
 
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -11,27 +12,38 @@ public class AccountServicesClient {
 
     private final RestClient catalog;
     private final RestClient booking;
+    private final String internalSecret;
 
-    public AccountServicesClient(RestClient.Builder builder, Environment env) {
+    public AccountServicesClient(
+            RestClient.Builder builder,
+            Environment env,
+            @Value("${app.internal.secret}") String internalSecret) {
+
         this.catalog = builder
                 .baseUrl(env.getProperty("app.services.catalog-url", "http://localhost:8082"))
                 .build();
+
         this.booking = builder
                 .baseUrl(env.getProperty("app.services.booking-url", "http://localhost:8083"))
                 .build();
+
+        this.internalSecret = internalSecret;
     }
 
     public int countFutureConfirmedBookings(Long userId) {
         Map<String, Object> result = booking.get()
                 .uri("/internal/accounts/{id}/future-confirmed-bookings", userId)
+                .header("X-Internal-Secret", internalSecret)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
+
         return ((Number) result.getOrDefault("count", 0)).intValue();
     }
 
     public void pauseActiveListings(Long userId) {
         catalog.post()
                 .uri("/internal/accounts/{id}/pause-listings", userId)
+                .header("X-Internal-Secret", internalSecret)
                 .retrieve()
                 .toBodilessEntity();
     }

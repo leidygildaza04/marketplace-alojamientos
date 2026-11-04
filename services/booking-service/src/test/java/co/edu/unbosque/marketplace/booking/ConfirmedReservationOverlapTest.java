@@ -44,6 +44,7 @@ class ConfirmedReservationOverlapTest {
                 LocalDate.parse("2026-12-10"), LocalDate.parse("2026-12-15"), "CONFIRMADA"));
 
         mockMvc.perform(get("/internal/alojamientos/25/reservas-confirmadas/solapamiento")
+                        .header("X-Internal-Secret", "dev-internal-secret-change-me")
                         .param("fechaInicio", "2026-12-01")
                         .param("fechaFin", "2026-12-20"))
                 .andExpect(status().isOk())
@@ -58,6 +59,7 @@ class ConfirmedReservationOverlapTest {
                 LocalDate.parse("2026-12-10"), LocalDate.parse("2026-12-15"), "CONFIRMADA"));
 
         mockMvc.perform(get("/internal/alojamientos/25/reservas-confirmadas/solapamiento")
+                        .header("X-Internal-Secret", "dev-internal-secret-change-me")
                         .param("fechaInicio", "2026-12-01")
                         .param("fechaFin", "2026-12-20"))
                 .andExpect(status().isOk())
@@ -70,6 +72,7 @@ class ConfirmedReservationOverlapTest {
                 LocalDate.parse("2026-12-10"), LocalDate.parse("2026-12-15"), "CONFIRMADA"));
 
         mockMvc.perform(get("/internal/alojamientos/25/reservas-confirmadas/solapamiento")
+                        .header("X-Internal-Secret", "dev-internal-secret-change-me")
                         .param("fechaInicio", "2026-12-20")
                         .param("fechaFin", "2026-12-25"))
                 .andExpect(status().isOk())
