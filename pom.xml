@@ -19,6 +19,7 @@
   <name>marketplace-alojamientos</name>
 
   <modules>
+    <module>security-common</module>
     <module>services/identity-service</module>
     <module>services/catalog-service</module>
     <module>services/booking-service</module>

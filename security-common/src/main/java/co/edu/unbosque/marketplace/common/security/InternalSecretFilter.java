@@ -1,4 +1,4 @@
-package co.edu.unbosque.marketplace.booking.security;
+package co.edu.unbosque.marketplace.common.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,19 +7,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
 public class InternalSecretFilter extends OncePerRequestFilter {
 
     private static final String HEADER = "X-Internal-Secret";
 
     private final String expectedSecret;
 
-    public InternalSecretFilter(
-            @Value("${app.internal.secret}") String expectedSecret) {
+    public InternalSecretFilter(String expectedSecret) {
         this.expectedSecret = expectedSecret;
     }
 
@@ -32,7 +28,8 @@ public class InternalSecretFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String receivedSecret = request.getHeader(HEADER);
 
