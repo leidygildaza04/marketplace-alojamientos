@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.web;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
@@ -29,5 +30,24 @@ public class AlojamientoController {
         Alojamiento alojamiento = service.crear(hostId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(alojamiento);
+    }
+
+    @PostMapping("/{id}/activar")
+    public ResponseEntity<Alojamiento> activar(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long usuarioId = Long.valueOf(authentication.getName());
+
+        boolean esAdministrador = authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN")
+                );
+
+        Alojamiento alojamiento =
+                service.activar(usuarioId, esAdministrador, id);
+
+        return ResponseEntity.ok(alojamiento);
     }
 }

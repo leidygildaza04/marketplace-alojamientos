@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.security;
 
 import co.edu.unbosque.marketplace.common.security.InternalSecretFilter;
@@ -34,6 +35,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/alojamientos")
                     .hasRole("HOST")
+                .requestMatchers(HttpMethod.POST, "/api/alojamientos/*/activar")
+                    .hasAnyRole("HOST", "ADMIN")
                 .requestMatchers("/api/v1/**", "/internal/**").permitAll()
                 .anyRequest().authenticated()
             )

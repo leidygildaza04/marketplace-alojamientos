@@ -1,9 +1,16 @@
 
 package co.edu.unbosque.marketplace.catalog;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.math.BigDecimal;
+
+import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
+import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +35,9 @@ class AlojamientoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private AlojamientoRepository alojamientoRepository;
 
     // PRUEBAS ORIGINALES
 
@@ -192,6 +202,51 @@ class AlojamientoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+
+    @Test
+    @WithMockUser(username = "200", roles = "ADMIN")
+    void administradorPuedeActivarAlojamientoDeOtroUsuario() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento administrador",
+                        "Alojamiento para pruebas",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(post("/api/alojamientos/"
+                        + alojamiento.getId() + "/activar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ACTIVA"));
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "HOST")
+    void anfitrionNoPuedeActivarAlojamientoDeOtroUsuario() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento de otro usuario",
+                        "Alojamiento para pruebas",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(post("/api/alojamientos/"
+                        + alojamiento.getId() + "/activar"))
+                .andExpect(status().isForbidden());
+    }
+
+
     // PRUEBA DE VALORES MINIMOS VALIDOS
 
     @Test
@@ -210,4 +265,57 @@ class AlojamientoControllerTest {
                 .andExpect(jsonPath("$.hostId").value(100));
     }
 
+    // PRUEBAS DE ACTIVACION - SCRUM-70
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void activaAlojamientoCuandoCumpleTodosLosRequisitos() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento completo",
+                        "Alojamiento para pruebas",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(post("/api/alojamientos/"
+                        + alojamiento.getId() + "/activar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ACTIVA"));
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaActivacionCuandoFaltanDatosYConservaEstado() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento incompleto",
+                        null,
+                        null,
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(post("/api/alojamientos/"
+                        + alojamiento.getId() + "/activar"))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason(
+                        containsString("Campos faltantes")
+                ));
+
+        Alojamiento alojamientoGuardado = alojamientoRepository
+                .findById(alojamiento.getId())
+                .orElseThrow();
+
+        assertEquals("BORRADOR", alojamientoGuardado.getEstado());
+    }
 }
