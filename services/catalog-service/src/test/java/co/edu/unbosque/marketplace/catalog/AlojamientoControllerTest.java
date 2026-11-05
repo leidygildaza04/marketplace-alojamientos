@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:catalog_alojamiento_test",
@@ -38,6 +39,10 @@ class AlojamientoControllerTest {
 
     @Autowired
     private AlojamientoRepository alojamientoRepository;
+
+    // Simula Backoffice para que las pruebas del controlador no dependan de un servicio externo.
+    @MockitoBean
+    private co.edu.unbosque.marketplace.catalog.client.AuditClient auditClient;
 
     // PRUEBAS ORIGINALES
 
