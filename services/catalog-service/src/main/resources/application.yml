@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8082
 
 spring:
@@ -29,3 +29,7 @@ app:
     secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
   internal:
     secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
+
+services:
+  backoffice:
+    base-url: ${BACKOFFICE_SERVICE_URL:http://localhost:8084}

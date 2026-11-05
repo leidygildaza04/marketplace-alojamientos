@@ -4,9 +4,23 @@ server:
 spring:
   application:
     name: backoffice-service
+  datasource:
+    url: ${BACKOFFICE_DB_URL:jdbc:mysql://localhost:3306/backoffice_db}
+    username: ${BACKOFFICE_DB_USER:app}
+    password: ${BACKOFFICE_DB_PASSWORD:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+app:
+  internal:
+    secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
