@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,6 +28,8 @@ class AlojamientoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // PRUEBAS ORIGINALES
 
     @Test
     @WithMockUser(username = "100", roles = "HOST")
@@ -94,4 +97,117 @@ class AlojamientoControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    // PRUEBAS DE PRECIO
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaPrecioEnCero() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": 0,
+                                    "capacidad": 4
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaPrecioNegativo() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": -100,
+                                    "capacidad": 4
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaPrecioNulo() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": null,
+                                    "capacidad": 4
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // PRUEBAS DE CAPACIDAD
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaCapacidadEnCero() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": 150000,
+                                    "capacidad": 0
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaCapacidadNegativa() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": 150000,
+                                    "capacidad": -1
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaCapacidadNula() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": 150000,
+                                    "capacidad": null
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    // PRUEBA DE VALORES MINIMOS VALIDOS
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void permitePrecioYCapacidadEnValoresMinimos() throws Exception {
+        mockMvc.perform(post("/api/alojamientos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento de prueba",
+                                    "precioNoche": 0.01,
+                                    "capacidad": 1
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.hostId").value(100));
+    }
+
 }
