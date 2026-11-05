@@ -35,6 +35,7 @@ class AlojamientoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                    "hostId": 200,
                                     "titulo": "Apartamento de prueba",
                                     "descripcion": "Alojamiento para pruebas",
                                     "direccion": "Calle 10",
