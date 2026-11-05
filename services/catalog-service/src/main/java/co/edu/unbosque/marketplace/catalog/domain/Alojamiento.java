@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.domain;
 
 import jakarta.persistence.*;
@@ -99,7 +100,33 @@ public class Alojamiento {
         return estado;
     }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
+    public void cambiarEstadoA(String nuevoEstado) {
+
+        if (nuevoEstado == null) {
+            throw new IllegalArgumentException("El nuevo estado no puede ser nulo");
+        }
+
+        boolean estadoReconocido = nuevoEstado.equals("BORRADOR")
+                || nuevoEstado.equals("PENDIENTE_REVISION")
+                || nuevoEstado.equals("ACTIVA")
+                || nuevoEstado.equals("PAUSADA")
+                || nuevoEstado.equals("BLOQUEADA");
+
+        if (!estadoReconocido) {
+            throw new IllegalArgumentException("Estado de publicación no reconocido: " + nuevoEstado);
+        }
+
+        boolean transicionPermitida =
+                ("BORRADOR".equals(estado) && "ACTIVA".equals(nuevoEstado))
+                || ("ACTIVA".equals(estado) && "PAUSADA".equals(nuevoEstado))
+                || ("PAUSADA".equals(estado) && "ACTIVA".equals(nuevoEstado));
+
+        if (!transicionPermitida) {
+            throw new IllegalStateException(
+                    "No se permite cambiar el estado de " + estado + " a " + nuevoEstado
+            );
+        }
+
+        this.estado = nuevoEstado;
     }
 }
