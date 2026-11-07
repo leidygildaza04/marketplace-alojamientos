@@ -2,7 +2,6 @@
 package co.edu.unbosque.marketplace.catalog.security;
 
 import co.edu.unbosque.marketplace.common.security.InternalSecretFilter;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,10 +32,19 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health/**").permitAll()
+
                 .requestMatchers(HttpMethod.POST, "/api/alojamientos")
                     .hasRole("HOST")
+
                 .requestMatchers(HttpMethod.POST, "/api/alojamientos/*/activar")
                     .hasAnyRole("HOST", "ADMIN")
+
+                .requestMatchers(HttpMethod.PUT, "/api/alojamientos/*")
+                    .hasAnyRole("HOST", "ADMIN")
+
+                .requestMatchers(HttpMethod.PATCH, "/api/alojamientos/*/pausar")
+                    .hasAnyRole("HOST", "ADMIN")
+
                 .requestMatchers("/api/v1/**", "/internal/**").permitAll()
                 .anyRequest().authenticated()
             )

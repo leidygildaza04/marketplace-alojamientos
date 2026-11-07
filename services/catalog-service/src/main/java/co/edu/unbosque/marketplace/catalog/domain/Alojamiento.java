@@ -100,20 +100,41 @@ public class Alojamiento {
         return estado;
     }
 
+    public void actualizarDatos(
+            String titulo,
+            String descripcion,
+            String direccion,
+            String ciudad,
+            BigDecimal precioNoche,
+            Integer capacidad
+    ) {
+        this.titulo = titulo;
+        this.descripcion = descripcion;
+        this.direccion = direccion;
+        this.ciudad = ciudad;
+        this.precioNoche = precioNoche;
+        this.capacidad = capacidad;
+    }
+
     public void cambiarEstadoA(String nuevoEstado) {
 
         if (nuevoEstado == null) {
-            throw new IllegalArgumentException("El nuevo estado no puede ser nulo");
+            throw new IllegalArgumentException(
+                    "El nuevo estado no puede ser nulo"
+            );
         }
 
-        boolean estadoReconocido = nuevoEstado.equals("BORRADOR")
+        boolean estadoReconocido =
+                nuevoEstado.equals("BORRADOR")
                 || nuevoEstado.equals("PENDIENTE_REVISION")
                 || nuevoEstado.equals("ACTIVA")
                 || nuevoEstado.equals("PAUSADA")
                 || nuevoEstado.equals("BLOQUEADA");
 
         if (!estadoReconocido) {
-            throw new IllegalArgumentException("Estado de publicación no reconocido: " + nuevoEstado);
+            throw new IllegalArgumentException(
+                    "Estado de publicación no reconocido: " + nuevoEstado
+            );
         }
 
         boolean transicionPermitida =
@@ -123,7 +144,8 @@ public class Alojamiento {
 
         if (!transicionPermitida) {
             throw new IllegalStateException(
-                    "No se permite cambiar el estado de " + estado + " a " + nuevoEstado
+                    "No se permite cambiar el estado de "
+                            + estado + " a " + nuevoEstado
             );
         }
 

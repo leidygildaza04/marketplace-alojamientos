@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.catalog.web;
 
 import co.edu.unbosque.marketplace.catalog.domain.PeriodoDisponibilidad;
+import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
 import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
@@ -13,44 +14,72 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Endpoints internos llamados por Booking para reclamar/liberar disponibilidad. */
 @RestController
 @RequestMapping("/internal/alojamientos/{alojamientoId}/periodos-disponibilidad")
 public class PeriodosReservaInternalController {
 
     private final PeriodoDisponibilidadRepository periodos;
+    private final AlojamientoRepository alojamientos;
 
-    public PeriodosReservaInternalController(PeriodoDisponibilidadRepository periodos) {
+    public PeriodosReservaInternalController(
+            PeriodoDisponibilidadRepository periodos,
+            AlojamientoRepository alojamientos) {
         this.periodos = periodos;
+        this.alojamientos = alojamientos;
     }
 
     @PostMapping("/reservar")
     @Transactional
-    public ResponseEntity<Void> reservar(@PathVariable Long alojamientoId,
+    public ResponseEntity<Void> reservar(
+            @PathVariable Long alojamientoId,
             @RequestParam Long reservaId,
             @RequestParam LocalDate fechaInicio,
             @RequestParam LocalDate fechaFin) {
+
         if (reservaId == null || fechaInicio == null || fechaFin == null
                 || !fechaInicio.isBefore(fechaFin)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Reserva y rango de fechas válidos son obligatorios");
         }
-        int actualizados = periodos.reservarAtomico(alojamientoId, reservaId, fechaInicio, fechaFin,
-                PeriodoDisponibilidad.Estado.DISPONIBLE, PeriodoDisponibilidad.Estado.RESERVADO);
+
+        var alojamiento = alojamientos.findByIdForUpdate(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "El alojamiento no existe"));
+
+        if (!"ACTIVA".equals(alojamiento.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se pueden realizar reservas para un alojamiento que no está activo");
+        }
+
+        int actualizados = periodos.reservarAtomico(
+                alojamientoId,
+                reservaId,
+                fechaInicio,
+                fechaFin,
+                PeriodoDisponibilidad.Estado.DISPONIBLE,
+                PeriodoDisponibilidad.Estado.RESERVADO);
+
         if (actualizados != 1) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "El periodo no existe, no contiene las fechas solicitadas o ya está reservado");
         }
+
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/liberar")
     @Transactional
-    public ResponseEntity<Void> liberar(@PathVariable Long alojamientoId,
+    public ResponseEntity<Void> liberar(
+            @PathVariable Long alojamientoId,
             @RequestParam Long reservaId) {
-        // Idempotente: una repetición de la compensación/liberación no libera otro periodo.
-        periodos.liberarAtomico(alojamientoId, reservaId,
-                PeriodoDisponibilidad.Estado.DISPONIBLE, PeriodoDisponibilidad.Estado.RESERVADO);
+
+        periodos.liberarAtomico(
+                alojamientoId,
+                reservaId,
+                PeriodoDisponibilidad.Estado.DISPONIBLE,
+                PeriodoDisponibilidad.Estado.RESERVADO);
+
         return ResponseEntity.noContent().build();
     }
 }
