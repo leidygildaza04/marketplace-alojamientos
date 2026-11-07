@@ -498,4 +498,34 @@ class AlojamientoControllerTest {
 
         assertEquals("BORRADOR", sinCambios.getEstado());
     }
+
+    // SCRUM-22: VALIDACION DE PROPIEDAD AL PAUSAR
+
+    @Test
+    @WithMockUser(username = "200", roles = "HOST")
+    void otroAnfitrionNoPuedePausarAlojamientoAjeno() throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento de otro anfitrion",
+                "Alojamiento para pruebas",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("150000"),
+                4
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamiento = alojamientoRepository.save(alojamiento);
+
+        mockMvc.perform(patch("/api/alojamientos/"
+                        + alojamiento.getId() + "/pausar"))
+                .andExpect(status().isForbidden());
+
+        Alojamiento sinCambios = alojamientoRepository
+                .findById(alojamiento.getId())
+                .orElseThrow();
+
+        assertEquals("ACTIVA", sinCambios.getEstado());
+    }
 }
