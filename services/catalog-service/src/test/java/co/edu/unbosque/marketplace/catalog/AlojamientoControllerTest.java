@@ -2,8 +2,11 @@
 package co.edu.unbosque.marketplace.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,6 +14,7 @@ import java.math.BigDecimal;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import co.edu.unbosque.marketplace.catalog.client.AuditClient;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +44,9 @@ class AlojamientoControllerTest {
     @Autowired
     private AlojamientoRepository alojamientoRepository;
 
-    // Simula Backoffice para que las pruebas del controlador no dependan de un servicio externo.
+    // Simula Backoffice para no depender de un servicio externo.
     @MockitoBean
-    private co.edu.unbosque.marketplace.catalog.client.AuditClient auditClient;
+    private AuditClient auditClient;
 
     // PRUEBAS ORIGINALES
 
@@ -207,7 +211,6 @@ class AlojamientoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-
     @Test
     @WithMockUser(username = "200", roles = "ADMIN")
     void administradorPuedeActivarAlojamientoDeOtroUsuario() throws Exception {
@@ -250,7 +253,6 @@ class AlojamientoControllerTest {
                         + alojamiento.getId() + "/activar"))
                 .andExpect(status().isForbidden());
     }
-
 
     // PRUEBA DE VALORES MINIMOS VALIDOS
 
@@ -322,5 +324,178 @@ class AlojamientoControllerTest {
                 .orElseThrow();
 
         assertEquals("BORRADOR", alojamientoGuardado.getEstado());
+    }
+
+    // NUEVAS PRUEBAS - SCRUM-22: EDITAR Y PAUSAR PUBLICACION
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void propietarioPuedeEditarSuAlojamientoYRegistrarAuditoria() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento original",
+                        "Descripcion original",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(put("/api/alojamientos/" + alojamiento.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento actualizado",
+                                    "descripcion": "Nueva descripcion",
+                                    "direccion": "Carrera 15",
+                                    "ciudad": "Medellin",
+                                    "precioNoche": 200000,
+                                    "capacidad": 5
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Apartamento actualizado"))
+                .andExpect(jsonPath("$.precioNoche").value(200000))
+                .andExpect(jsonPath("$.capacidad").value(5));
+
+        Alojamiento actualizado = alojamientoRepository
+                .findById(alojamiento.getId())
+                .orElseThrow();
+
+        assertEquals("Apartamento actualizado", actualizado.getTitulo());
+        assertEquals("Nueva descripcion", actualizado.getDescripcion());
+        assertEquals("Carrera 15", actualizado.getDireccion());
+        assertEquals("Medellin", actualizado.getCiudad());
+        assertEquals(new BigDecimal("200000"), actualizado.getPrecioNoche());
+        assertEquals(5, actualizado.getCapacidad());
+
+        verify(auditClient).registrarEdicion(100L, alojamiento.getId());
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "HOST")
+    void otroAnfitrionNoPuedeEditarAlojamientoAjeno() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento original",
+                        "Descripcion original",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(put("/api/alojamientos/" + alojamiento.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Intento de modificacion",
+                                    "descripcion": "Cambio no autorizado",
+                                    "direccion": "Calle 20",
+                                    "ciudad": "Cali",
+                                    "precioNoche": 200000,
+                                    "capacidad": 5
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+
+        Alojamiento sinCambios = alojamientoRepository
+                .findById(alojamiento.getId())
+                .orElseThrow();
+
+        assertEquals("Apartamento original", sinCambios.getTitulo());
+        assertEquals(new BigDecimal("150000"), sinCambios.getPrecioNoche());
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "ADMIN")
+    void administradorPuedeEditarAlojamientoDeOtroUsuario() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento original",
+                        "Descripcion original",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(put("/api/alojamientos/" + alojamiento.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "titulo": "Apartamento editado por admin",
+                                    "descripcion": "Descripcion modificada",
+                                    "direccion": "Calle 30",
+                                    "ciudad": "Bogota",
+                                    "precioNoche": 250000,
+                                    "capacidad": 6
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.titulo").value("Apartamento editado por admin"));
+
+        verify(auditClient).registrarEdicion(200L, alojamiento.getId());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void propietarioPuedePausarAlojamientoActivoYRegistrarAuditoria() throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento activo",
+                "Alojamiento para pruebas",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("150000"),
+                4
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamiento = alojamientoRepository.save(alojamiento);
+
+        mockMvc.perform(patch("/api/alojamientos/"
+                        + alojamiento.getId() + "/pausar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("PAUSADA"));
+
+        verify(auditClient).registrarPausa(100L, alojamiento.getId());
+    }
+
+    @Test
+    @WithMockUser(username = "100", roles = "HOST")
+    void rechazaPausarAlojamientoQueNoEstaActivo() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento en borrador",
+                        "Alojamiento para pruebas",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(patch("/api/alojamientos/"
+                        + alojamiento.getId() + "/pausar"))
+                .andExpect(status().isConflict());
+
+        Alojamiento sinCambios = alojamientoRepository
+                .findById(alojamiento.getId())
+                .orElseThrow();
+
+        assertEquals("BORRADOR", sinCambios.getEstado());
     }
 }

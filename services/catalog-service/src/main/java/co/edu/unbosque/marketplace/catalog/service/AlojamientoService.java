@@ -51,18 +51,11 @@ public class AlojamientoService {
             Long alojamientoId
     ) {
 
-        Alojamiento alojamiento = repository.findById(alojamientoId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
-                ));
-
-        if (!esAdministrador && !usuarioId.equals(alojamiento.getHostId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "No puedes activar una publicación que no te pertenece"
-            );
-        }
+        Alojamiento alojamiento = buscarYAutorizar(
+                usuarioId,
+                esAdministrador,
+                alojamientoId
+        );
 
         List<String> camposFaltantes =
                 validator.obtenerCamposFaltantes(alojamiento);
@@ -85,18 +78,164 @@ public class AlojamientoService {
             );
         }
 
-        Alojamiento alojamientoGuardado = repository.saveAndFlush(alojamiento);
+        Alojamiento alojamientoGuardado =
+                repository.saveAndFlush(alojamiento);
+
+        registrarAuditoria(
+                () -> auditClient.registrarActivacion(
+                        usuarioId,
+                        alojamientoGuardado.getId()
+                ),
+                "activación"
+        );
+
+        return alojamientoGuardado;
+    }
+
+    @Transactional
+    public Alojamiento editar(
+            Long usuarioId,
+            boolean esAdministrador,
+            Long alojamientoId,
+            CrearAlojamientoRequest request
+    ) {
+
+        Alojamiento alojamiento = buscarYAutorizar(
+                usuarioId,
+                esAdministrador,
+                alojamientoId
+        );
+
+        if ("BLOQUEADA".equals(alojamiento.getEstado())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se puede editar una publicación bloqueada"
+            );
+        }
+
+        alojamiento.actualizarDatos(
+                request.titulo(),
+                request.descripcion(),
+                request.direccion(),
+                request.ciudad(),
+                request.precioNoche(),
+                request.capacidad()
+        );
+
+        Alojamiento alojamientoGuardado =
+                repository.saveAndFlush(alojamiento);
+
+        registrarAuditoria(
+                () -> auditClient.registrarEdicion(
+                        usuarioId,
+                        alojamientoGuardado.getId()
+                ),
+                "edición"
+        );
+
+        return alojamientoGuardado;
+    }
+
+    @Transactional
+    public Alojamiento pausar(
+            Long usuarioId,
+            boolean esAdministrador,
+            Long alojamientoId
+    ) {
+
+        // Utiliza el mismo bloqueo que el proceso de reserva.
+        Alojamiento alojamiento = buscarYAutorizarConBloqueo(
+                usuarioId,
+                esAdministrador,
+                alojamientoId
+        );
 
         try {
-            auditClient.registrarActivacion(usuarioId, alojamientoGuardado.getId());
-        } catch (RestClientException exception) {
+            alojamiento.cambiarEstadoA("PAUSADA");
+        } catch (IllegalStateException exception) {
             throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "El alojamiento no pudo completar la activación porque no se pudo registrar la auditoría",
+                    HttpStatus.CONFLICT,
+                    exception.getMessage(),
                     exception
             );
         }
 
+        Alojamiento alojamientoGuardado =
+                repository.saveAndFlush(alojamiento);
+
+        registrarAuditoria(
+                () -> auditClient.registrarPausa(
+                        usuarioId,
+                        alojamientoGuardado.getId()
+                ),
+                "pausa"
+        );
+
         return alojamientoGuardado;
+    }
+
+    private Alojamiento buscarYAutorizar(
+            Long usuarioId,
+            boolean esAdministrador,
+            Long alojamientoId
+    ) {
+
+        Alojamiento alojamiento = repository.findById(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Alojamiento no encontrado"
+                ));
+
+        validarAutorizacion(usuarioId, esAdministrador, alojamiento);
+
+        return alojamiento;
+    }
+
+    private Alojamiento buscarYAutorizarConBloqueo(
+            Long usuarioId,
+            boolean esAdministrador,
+            Long alojamientoId
+    ) {
+
+        Alojamiento alojamiento = repository.findByIdForUpdate(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Alojamiento no encontrado"
+                ));
+
+        validarAutorizacion(usuarioId, esAdministrador, alojamiento);
+
+        return alojamiento;
+    }
+
+    private void validarAutorizacion(
+            Long usuarioId,
+            boolean esAdministrador,
+            Alojamiento alojamiento
+    ) {
+
+        if (!esAdministrador
+                && (usuarioId == null || !usuarioId.equals(alojamiento.getHostId()))) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para modificar esta publicación"
+            );
+        }
+    }
+
+    private void registrarAuditoria(
+            Runnable operacion,
+            String nombreOperacion
+    ) {
+        try {
+            operacion.run();
+        } catch (RestClientException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo completar la operación porque falló "
+                            + "el registro de auditoría de " + nombreOperacion,
+                    exception
+            );
+        }
     }
 }

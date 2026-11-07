@@ -38,16 +38,48 @@ public class AlojamientoController {
             Authentication authentication
     ) {
         Long usuarioId = Long.valueOf(authentication.getName());
-
-        boolean esAdministrador = authentication.getAuthorities()
-                .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                );
+        boolean esAdministrador = esAdministrador(authentication);
 
         Alojamiento alojamiento =
                 service.activar(usuarioId, esAdministrador, id);
 
         return ResponseEntity.ok(alojamiento);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Alojamiento> editar(
+            @PathVariable Long id,
+            @Valid @RequestBody CrearAlojamientoRequest request,
+            Authentication authentication
+    ) {
+        Long usuarioId = Long.valueOf(authentication.getName());
+        boolean esAdministrador = esAdministrador(authentication);
+
+        Alojamiento alojamiento =
+                service.editar(usuarioId, esAdministrador, id, request);
+
+        return ResponseEntity.ok(alojamiento);
+    }
+
+    @PatchMapping("/{id}/pausar")
+    public ResponseEntity<Alojamiento> pausar(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long usuarioId = Long.valueOf(authentication.getName());
+        boolean esAdministrador = esAdministrador(authentication);
+
+        Alojamiento alojamiento =
+                service.pausar(usuarioId, esAdministrador, id);
+
+        return ResponseEntity.ok(alojamiento);
+    }
+
+    private boolean esAdministrador(Authentication authentication) {
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN")
+                );
     }
 }

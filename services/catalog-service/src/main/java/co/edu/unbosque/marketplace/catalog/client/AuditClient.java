@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.client;
 
 import co.edu.unbosque.marketplace.catalog.dto.CrearEventoAuditoriaRequest;
@@ -19,14 +20,47 @@ public class AuditClient {
     }
 
     public void registrarActivacion(Long usuarioId, Long alojamientoId) {
-        CrearEventoAuditoriaRequest request = new CrearEventoAuditoriaRequest(
+        registrarEvento(
                 usuarioId,
-                "ACTIVAR_ALOJAMIENTO",
-                "ALOJAMIENTO",
                 alojamientoId,
-                "Activación del alojamiento",
-                "EXITOSO"
+                "ACTIVAR_ALOJAMIENTO",
+                "Activación del alojamiento"
         );
+    }
+
+    public void registrarEdicion(Long usuarioId, Long alojamientoId) {
+        registrarEvento(
+                usuarioId,
+                alojamientoId,
+                "EDITAR_ALOJAMIENTO",
+                "Edición de los datos del alojamiento"
+        );
+    }
+
+    public void registrarPausa(Long usuarioId, Long alojamientoId) {
+        registrarEvento(
+                usuarioId,
+                alojamientoId,
+                "PAUSAR_ALOJAMIENTO",
+                "Pausa de la publicación del alojamiento"
+        );
+    }
+
+    private void registrarEvento(
+            Long usuarioId,
+            Long alojamientoId,
+            String accion,
+            String detalle
+    ) {
+        CrearEventoAuditoriaRequest request =
+                new CrearEventoAuditoriaRequest(
+                        usuarioId,
+                        accion,
+                        "ALOJAMIENTO",
+                        alojamientoId,
+                        detalle,
+                        "EXITOSO"
+                );
 
         restClient.post()
                 .uri("/internal/auditoria/eventos")
