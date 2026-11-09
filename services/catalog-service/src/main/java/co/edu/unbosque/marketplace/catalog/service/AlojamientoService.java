@@ -1,6 +1,9 @@
 package co.edu.unbosque.marketplace.catalog.service;
 
 import co.edu.unbosque.marketplace.catalog.client.AuditClient;
+
+import co.edu.unbosque.marketplace.catalog.client.BookingReviewClient;
+import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
@@ -17,15 +20,20 @@ public class AlojamientoService {
     private final AlojamientoRepository repository;
     private final RequisitosMinimosAlojamientoValidator validator;
     private final AuditClient auditClient;
-
+    private final BookingReviewClient bookingReviewClient;
+    private final NotificationClient notificationClient;
     public AlojamientoService(
             AlojamientoRepository repository,
             RequisitosMinimosAlojamientoValidator validator,
-            AuditClient auditClient
+            AuditClient auditClient,
+            BookingReviewClient bookingReviewClient,
+            NotificationClient notificationClient
     ) {
         this.repository = repository;
         this.validator = validator;
         this.auditClient = auditClient;
+        this.bookingReviewClient = bookingReviewClient;
+        this.notificationClient = notificationClient;
     }
 
     @Transactional
@@ -172,6 +180,44 @@ public class AlojamientoService {
         );
 
         return alojamientoGuardado;
+    }
+
+    @Transactional
+    public Alojamiento bloquear(
+            Long administradorId,
+            boolean esAdministrador,
+            Long alojamientoId,
+            String motivo
+    ) {
+        if (!esAdministrador) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo un administrador puede bloquear publicaciones"
+            );
+        }
+
+        Alojamiento alojamiento =
+                buscarYAutorizarConBloqueo(administradorId, true, alojamientoId);
+
+        try {
+            alojamiento.bloquear(motivo);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+        }
+
+        Alojamiento bloqueado = repository.saveAndFlush(alojamiento);
+
+        registrarAuditoria(() -> {
+            bookingReviewClient.enviarReservasARevisionManual(alojamientoId);
+            notificationClient.notificarBloqueo(
+                    alojamiento.getHostId(), alojamientoId, motivo
+            );
+            auditClient.registrarBloqueo(administradorId, alojamientoId, motivo);
+        }, "bloqueo");
+
+        return bloqueado;
     }
 
     private Alojamiento buscarYAutorizar(

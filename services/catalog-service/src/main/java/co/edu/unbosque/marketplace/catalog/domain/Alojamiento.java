@@ -35,6 +35,8 @@ public class Alojamiento {
 
     @Column(name = "estado_publicacion", nullable = false, length = 30)
     private String estado;
+    @jakarta.persistence.Column(name = "motivo_bloqueo", length = 1000)
+    private String motivoBloqueo;
 
     protected Alojamiento() {
     }
@@ -99,6 +101,22 @@ public class Alojamiento {
     public String getEstado() {
         return estado;
     }
+
+    public String getMotivoBloqueo() {
+        return motivoBloqueo;
+    }
+
+    public void bloquear(String motivo) {
+        if (motivo == null || motivo.isBlank()) {
+            throw new IllegalArgumentException("El motivo del bloqueo es obligatorio");
+        }
+        if ("BLOQUEADA".equals(estado)) {
+            throw new IllegalStateException("El alojamiento ya está bloqueado");
+        }
+        this.motivoBloqueo = motivo.trim();
+        this.estado = "BLOQUEADA";
+    }
+
 
     public void actualizarDatos(
             String titulo,

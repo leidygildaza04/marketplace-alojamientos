@@ -16,9 +16,9 @@ import co.edu.unbosque.marketplace.booking.dto.ReservaResponse;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
 
 /**
- * Coordina la reserva local con el bloqueo atómico del periodo en Catalog.
- * Al ser bases de datos independientes, el flujo usa compensación (saga) y
- * no afirma una transacción ACID distribuida entre ambos servicios.
+ * Coordina la reserva local con el bloqueo atÃ³mico del periodo en Catalog.
+ * Al ser bases de datos independientes, el flujo usa compensaciÃ³n (saga) y
+ * no afirma una transacciÃ³n ACID distribuida entre ambos servicios.
  */
 @Service
 public class ReservaService {
@@ -53,7 +53,7 @@ public class ReservaService {
         } catch (HttpClientErrorException.Conflict ex) {
             cambiarEstado(pendiente.getId(), "RECHAZADA");
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "El periodo ya no está disponible para esas fechas", ex);
+                    "El periodo ya no estÃ¡ disponible para esas fechas", ex);
 
         } catch (RestClientException ex) {
             cambiarEstado(pendiente.getId(), "RECHAZADA");
@@ -65,7 +65,7 @@ public class ReservaService {
             Reserva confirmada = transactions.execute(status -> {
                 Reserva actual = reservas.findById(pendiente.getId())
                         .orElseThrow(() -> new IllegalStateException(
-                                "La reserva provisional desapareció"));
+                                "La reserva provisional desapareciÃ³"));
 
                 actual.cambiarEstado("CONFIRMADA");
                 return reservas.save(actual);
@@ -88,13 +88,13 @@ public class ReservaService {
             if (liberado) {
                 cambiarEstado(pendiente.getId(), "RECHAZADA");
             } else {
-                // El periodo podría continuar reservado en Catalog.
+                // El periodo podrÃ­a continuar reservado en Catalog.
                 cambiarEstado(pendiente.getId(), "COMPENSACION_PENDIENTE");
             }
 
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "No fue posible finalizar la confirmación de la reserva. "
-                            + "La compensación requiere revisión", ex);
+                    "No fue posible finalizar la confirmaciÃ³n de la reserva. "
+                            + "La compensaciÃ³n requiere revisiÃ³n", ex);
         }
     }
 
@@ -123,13 +123,13 @@ public class ReservaService {
         }
 
         try {
-            // Libera únicamente el periodo asociado a esta reserva.
+            // Libera Ãºnicamente el periodo asociado a esta reserva.
             catalog.liberar(datos.getAlojamientoId(), datos.getId());
 
         } catch (RestClientException ex) {
             // Se conserva CANCELACION_PENDIENTE para permitir un nuevo intento.
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "La cancelación quedó pendiente porque no se pudo liberar el periodo", ex);
+                    "La cancelaciÃ³n quedÃ³ pendiente porque no se pudo liberar el periodo", ex);
         }
 
         Reserva cancelada = transactions.execute(status -> {
@@ -144,6 +144,24 @@ public class ReservaService {
         return ReservaResponse.desde(cancelada);
     }
 
+
+    /**
+     * Conserva las reservas vigentes del alojamiento y las marca
+     * para revisión manual después de un bloqueo administrativo.
+     */
+    public int marcarReservasFuturasEnRevision(Long alojamientoId) {
+        return transactions.execute(status -> {
+            var reservasVigentes = reservas
+                    .findByAlojamientoIdAndEstadoAndCheckOutGreaterThanEqual(
+                            alojamientoId, "CONFIRMADA", java.time.LocalDate.now());
+
+            reservasVigentes.forEach(reserva ->
+                    reserva.cambiarEstado("REVISION_MANUAL"));
+
+            reservas.saveAll(reservasVigentes);
+            return reservasVigentes.size();
+        });
+    }
     private void cambiarEstado(Long reservaId, String estado) {
         transactions.execute(status -> {
             reservas.findById(reservaId).ifPresent(reserva -> {
