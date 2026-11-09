@@ -787,4 +787,105 @@ class AlojamientoControllerTest {
                 .andExpect(jsonPath("$[0].titulo")
                         .value("Apartamento con todos los filtros"));
     }
+
+    // SCRUM-73: EXCLUIR ALOJAMIENTOS SIN DISPONIBILIDAD
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void buscaSoloAlojamientosDisponiblesDuranteTodoElRango() throws Exception {
+
+        LocalDate fechaInicio = LocalDate.of(2027, 2, 3);
+        LocalDate fechaFin = LocalDate.of(2027, 2, 6);
+
+        // Alojamiento con disponibilidad para todo el rango.
+        Alojamiento disponible = crearAlojamientoActivo(
+                "Apartamento disponible completo", 200L
+        );
+
+        periodoDisponibilidadRepository.save(
+                new PeriodoDisponibilidad(
+                        disponible,
+                        LocalDate.of(2027, 2, 1),
+                        LocalDate.of(2027, 2, 10)
+                )
+        );
+
+        // Alojamiento cuyo periodo está reservado.
+        Alojamiento reservado = crearAlojamientoActivo(
+                "Apartamento reservado", 201L
+        );
+
+        PeriodoDisponibilidad periodoReservado = new PeriodoDisponibilidad(
+                reservado,
+                LocalDate.of(2027, 2, 1),
+                LocalDate.of(2027, 2, 10)
+        );
+        periodoReservado.cambiarEstado(
+                PeriodoDisponibilidad.Estado.RESERVADO, 9001L
+        );
+        periodoDisponibilidadRepository.save(periodoReservado);
+
+        // Alojamiento cuyo periodo no cubre toda la estancia.
+        Alojamiento parcial = crearAlojamientoActivo(
+                "Apartamento disponibilidad parcial", 202L
+        );
+
+        periodoDisponibilidadRepository.save(
+                new PeriodoDisponibilidad(
+                        parcial,
+                        LocalDate.of(2027, 2, 4),
+                        LocalDate.of(2027, 2, 10)
+                )
+        );
+
+        // Alojamiento sin periodos de disponibilidad.
+        crearAlojamientoActivo("Apartamento sin periodos", 203L);
+
+        mockMvc.perform(get("/api/alojamientos/buscar")
+                        .param("fechaInicio", fechaInicio.toString())
+                        .param("fechaFin", fechaFin.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].titulo")
+                        .value("Apartamento disponible completo"));
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void rechazaFechasInvalidasEnLaBusqueda() throws Exception {
+
+        String ruta = "/api/alojamientos/buscar";
+
+        // Solo se envía la fecha de inicio.
+        mockMvc.perform(get(ruta)
+                        .param("fechaInicio", "2027-02-03"))
+                .andExpect(status().isBadRequest());
+
+        // Las fechas son iguales.
+        mockMvc.perform(get(ruta)
+                        .param("fechaInicio", "2027-02-03")
+                        .param("fechaFin", "2027-02-03"))
+                .andExpect(status().isBadRequest());
+
+        // La fecha de inicio es posterior a la fecha de fin.
+        mockMvc.perform(get(ruta)
+                        .param("fechaInicio", "2027-02-10")
+                        .param("fechaFin", "2027-02-03"))
+                .andExpect(status().isBadRequest());
+    }
+
+    private Alojamiento crearAlojamientoActivo(String titulo, Long hostId) {
+        Alojamiento alojamiento = new Alojamiento(
+                hostId,
+                titulo,
+                "Alojamiento para pruebas de disponibilidad",
+                "Calle de prueba",
+                "Bogota",
+                new BigDecimal("180000"),
+                5
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        return alojamientoRepository.save(alojamiento);
+    }
 }
