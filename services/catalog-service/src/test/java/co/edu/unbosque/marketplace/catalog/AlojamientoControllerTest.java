@@ -708,4 +708,83 @@ class AlojamientoControllerTest {
 
         assertEquals("ACTIVA", sinCambios.getEstado());
     }
+
+    // SCRUM-72: BUSQUEDA CON FILTROS COMBINADOS
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void buscaAlojamientosAplicandoTodosLosFiltrosYExcluyeBorradores() throws Exception {
+
+        Alojamiento alojamientoCoincidente = new Alojamiento(
+                100L,
+                "Apartamento con todos los filtros",
+                "Alojamiento para pruebas",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("180000"),
+                5
+        );
+
+        alojamientoCoincidente.actualizarDatosComplementarios(
+                "APARTAMENTO",
+                "No fumar",
+                "Flexible",
+                List.of("WiFi", "Cocina"),
+                List.of()
+        );
+        alojamientoCoincidente.cambiarEstadoA("ACTIVA");
+        alojamientoRepository.save(alojamientoCoincidente);
+
+        Alojamiento alojamientoSinTodosLosServicios = new Alojamiento(
+                101L,
+                "Apartamento con servicios incompletos",
+                "Alojamiento para pruebas",
+                "Calle 20",
+                "Bogota",
+                new BigDecimal("180000"),
+                5
+        );
+
+        alojamientoSinTodosLosServicios.actualizarDatosComplementarios(
+                "APARTAMENTO",
+                "No fumar",
+                "Flexible",
+                List.of("WiFi", "Piscina"),
+                List.of()
+        );
+        alojamientoSinTodosLosServicios.cambiarEstadoA("ACTIVA");
+        alojamientoRepository.save(alojamientoSinTodosLosServicios);
+
+        Alojamiento alojamientoEnBorrador = new Alojamiento(
+                102L,
+                "Apartamento en borrador",
+                "Alojamiento para pruebas",
+                "Calle 30",
+                "Bogota",
+                new BigDecimal("180000"),
+                5
+        );
+
+        alojamientoEnBorrador.actualizarDatosComplementarios(
+                "APARTAMENTO",
+                "No fumar",
+                "Flexible",
+                List.of("WiFi", "Cocina"),
+                List.of()
+        );
+        alojamientoRepository.save(alojamientoEnBorrador);
+
+        mockMvc.perform(get("/api/alojamientos/buscar")
+                        .param("ciudad", "Bogota")
+                        .param("capacidad", "4")
+                        .param("precioMinimo", "100000")
+                        .param("precioMaximo", "250000")
+                        .param("tipoAlojamiento", "APARTAMENTO")
+                        .param("servicios", "WiFi")
+                        .param("servicios", "Cocina"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].titulo")
+                        .value("Apartamento con todos los filtros"));
+    }
 }
