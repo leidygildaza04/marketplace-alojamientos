@@ -2,6 +2,7 @@ package co.edu.unbosque.marketplace.backoffice.notification.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "notificaciones")
@@ -43,17 +44,40 @@ public class Notificacion {
         this.tipo = tipo;
         this.entidadId = entidadId;
         this.leida = false;
-        this.fechaCreacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now(ZoneId.of("America/Bogota"));
     }
 
-    public Long getId() { return id; }
-    public Long getUsuarioId() { return usuarioId; }
-    public String getTitulo() { return titulo; }
-    public String getMensaje() { return mensaje; }
-    public String getTipo() { return tipo; }
-    public Long getEntidadId() { return entidadId; }
-    public boolean isLeida() { return leida; }
-    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public Long getId() {
+        return id;
+    }
+
+    public Long getUsuarioId() {
+        return usuarioId;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public Long getEntidadId() {
+        return entidadId;
+    }
+
+    public boolean isLeida() {
+        return leida;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
 
     public void marcarComoLeida() {
         this.leida = true;

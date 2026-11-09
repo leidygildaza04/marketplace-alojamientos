@@ -1,5 +1,7 @@
-
 package co.edu.unbosque.marketplace.booking.service;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,19 +18,25 @@ import co.edu.unbosque.marketplace.booking.dto.ReservaResponse;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
 
 /**
- * Coordina la reserva local con el bloqueo atÃ³mico del periodo en Catalog.
- * Al ser bases de datos independientes, el flujo usa compensaciÃ³n (saga) y
- * no afirma una transacciÃ³n ACID distribuida entre ambos servicios.
+ * Coordina la reserva local con el bloqueo atómico del periodo en Catalog.
+ * Al ser bases de datos independientes, el flujo usa compensación (saga) y
+ * no afirma una transacción ACID distribuida entre ambos servicios.
  */
 @Service
 public class ReservaService {
+
+    private static final String ESTADO_CONFIRMADA = "CONFIRMADA";
+    private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Bogota");
 
     private final ReservaRepository reservas;
     private final CatalogPeriodClient catalog;
     private final TransactionTemplate transactions;
 
-    public ReservaService(ReservaRepository reservas, CatalogPeriodClient catalog,
-            PlatformTransactionManager transactionManager) {
+    public ReservaService(
+            ReservaRepository reservas,
+            CatalogPeriodClient catalog,
+            PlatformTransactionManager transactionManager
+    ) {
         this.reservas = reservas;
         this.catalog = catalog;
         this.transactions = new TransactionTemplate(transactionManager);
@@ -38,36 +46,57 @@ public class ReservaService {
         validar(request);
 
         Reserva pendiente = transactions.execute(status -> reservas.save(
-                new Reserva(request.userId(), request.alojamientoId(),
-                        request.checkIn(), request.checkOut(), "PENDIENTE")));
+                new Reserva(
+                        request.userId(),
+                        request.alojamientoId(),
+                        request.checkIn(),
+                        request.checkOut(),
+                        "PENDIENTE"
+                )
+        ));
 
         if (pendiente == null || pendiente.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible registrar la solicitud de reserva");
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "No fue posible registrar la solicitud de reserva"
+            );
         }
 
         try {
-            catalog.reservar(pendiente.getAlojamientoId(), pendiente.getId(),
-                    pendiente.getCheckIn(), pendiente.getCheckOut());
+            catalog.reservar(
+                    pendiente.getAlojamientoId(),
+                    pendiente.getId(),
+                    pendiente.getCheckIn(),
+                    pendiente.getCheckOut()
+            );
 
         } catch (HttpClientErrorException.Conflict ex) {
             cambiarEstado(pendiente.getId(), "RECHAZADA");
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "El periodo ya no estÃ¡ disponible para esas fechas", ex);
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El periodo ya no está disponible para esas fechas",
+                    ex
+            );
 
         } catch (RestClientException ex) {
             cambiarEstado(pendiente.getId(), "RECHAZADA");
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "No fue posible bloquear el periodo. Intenta nuevamente", ex);
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No fue posible bloquear el periodo. Intenta nuevamente",
+                    ex
+            );
         }
 
         try {
             Reserva confirmada = transactions.execute(status -> {
                 Reserva actual = reservas.findById(pendiente.getId())
                         .orElseThrow(() -> new IllegalStateException(
-                                "La reserva provisional desapareciÃ³"));
+                                "La reserva provisional desapareció"
+                        ));
 
-                actual.cambiarEstado("CONFIRMADA");
+                actual.cambiarEstado(ESTADO_CONFIRMADA);
                 return reservas.save(actual);
             });
 
@@ -78,7 +107,10 @@ public class ReservaService {
             boolean liberado = false;
 
             try {
-                catalog.liberar(pendiente.getAlojamientoId(), pendiente.getId());
+                catalog.liberar(
+                        pendiente.getAlojamientoId(),
+                        pendiente.getId()
+                );
                 liberado = true;
 
             } catch (RestClientException compensacion) {
@@ -88,13 +120,19 @@ public class ReservaService {
             if (liberado) {
                 cambiarEstado(pendiente.getId(), "RECHAZADA");
             } else {
-                // El periodo podrÃ­a continuar reservado en Catalog.
-                cambiarEstado(pendiente.getId(), "COMPENSACION_PENDIENTE");
+                // El periodo podría continuar reservado en Catalog.
+                cambiarEstado(
+                        pendiente.getId(),
+                        "COMPENSACION_PENDIENTE"
+                );
             }
 
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "No fue posible finalizar la confirmaciÃ³n de la reserva. "
-                            + "La compensaciÃ³n requiere revisiÃ³n", ex);
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No fue posible finalizar la confirmación de la reserva. "
+                            + "La compensación requiere revisión",
+                    ex
+            );
         }
     }
 
@@ -102,16 +140,20 @@ public class ReservaService {
         Reserva datos = transactions.execute(status -> {
             Reserva reserva = reservas.findById(reservaId)
                     .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "La reserva no existe"));
+                            HttpStatus.NOT_FOUND,
+                            "La reserva no existe"
+                    ));
 
             if ("CANCELADA".equals(reserva.getEstado())) {
                 return reserva;
             }
 
-            if (!"CONFIRMADA".equals(reserva.getEstado())
+            if (!ESTADO_CONFIRMADA.equals(reserva.getEstado())
                     && !"CANCELACION_PENDIENTE".equals(reserva.getEstado())) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "La reserva no se encuentra en un estado que permita cancelarla");
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "La reserva no se encuentra en un estado que permita cancelarla"
+                );
             }
 
             reserva.cambiarEstado("CANCELACION_PENDIENTE");
@@ -123,19 +165,24 @@ public class ReservaService {
         }
 
         try {
-            // Libera Ãºnicamente el periodo asociado a esta reserva.
+            // Libera únicamente el periodo asociado a esta reserva.
             catalog.liberar(datos.getAlojamientoId(), datos.getId());
 
         } catch (RestClientException ex) {
             // Se conserva CANCELACION_PENDIENTE para permitir un nuevo intento.
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "La cancelaciÃ³n quedÃ³ pendiente porque no se pudo liberar el periodo", ex);
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "La cancelación quedó pendiente porque no se pudo liberar el periodo",
+                    ex
+            );
         }
 
         Reserva cancelada = transactions.execute(status -> {
             Reserva actual = reservas.findById(reservaId)
                     .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "La reserva no existe"));
+                            HttpStatus.NOT_FOUND,
+                            "La reserva no existe"
+                    ));
 
             actual.cambiarEstado("CANCELADA");
             return reservas.save(actual);
@@ -143,7 +190,6 @@ public class ReservaService {
 
         return ReservaResponse.desde(cancelada);
     }
-
 
     /**
      * Conserva las reservas vigentes del alojamiento y las marca
@@ -153,15 +199,20 @@ public class ReservaService {
         return transactions.execute(status -> {
             var reservasVigentes = reservas
                     .findByAlojamientoIdAndEstadoAndCheckOutGreaterThanEqual(
-                            alojamientoId, "CONFIRMADA", java.time.LocalDate.now());
+                            alojamientoId,
+                            ESTADO_CONFIRMADA,
+                            LocalDate.now(ZONA_HORARIA)
+                    );
 
             reservasVigentes.forEach(reserva ->
-                    reserva.cambiarEstado("REVISION_MANUAL"));
+                    reserva.cambiarEstado("REVISION_MANUAL")
+            );
 
             reservas.saveAll(reservasVigentes);
             return reservasVigentes.size();
         });
     }
+
     private void cambiarEstado(Long reservaId, String estado) {
         transactions.execute(status -> {
             reservas.findById(reservaId).ifPresent(reserva -> {
@@ -174,16 +225,22 @@ public class ReservaService {
     }
 
     private void validar(CrearReservaRequest request) {
-        if (request == null || request.userId() == null
+        if (request == null
+                || request.userId() == null
                 || request.alojamientoId() == null
-                || request.checkIn() == null || request.checkOut() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Usuario, alojamiento y fechas son obligatorios");
+                || request.checkIn() == null
+                || request.checkOut() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Usuario, alojamiento y fechas son obligatorios"
+            );
         }
 
         if (!request.checkIn().isBefore(request.checkOut())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La fecha de entrada debe ser anterior a la fecha de salida");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La fecha de entrada debe ser anterior a la fecha de salida"
+            );
         }
     }
 }

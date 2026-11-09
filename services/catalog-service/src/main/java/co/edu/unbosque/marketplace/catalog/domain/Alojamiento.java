@@ -1,4 +1,3 @@
-
 package co.edu.unbosque.marketplace.catalog.domain;
 
 import jakarta.persistence.*;
@@ -7,6 +6,8 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "alojamientos")
 public class Alojamiento {
+
+    public static final String ESTADO_BLOQUEADA = "BLOQUEADA";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +36,8 @@ public class Alojamiento {
 
     @Column(name = "estado_publicacion", nullable = false, length = 30)
     private String estado;
-    @jakarta.persistence.Column(name = "motivo_bloqueo", length = 1000)
+
+    @Column(name = "motivo_bloqueo", length = 1000)
     private String motivoBloqueo;
 
     protected Alojamiento() {
@@ -108,15 +110,20 @@ public class Alojamiento {
 
     public void bloquear(String motivo) {
         if (motivo == null || motivo.isBlank()) {
-            throw new IllegalArgumentException("El motivo del bloqueo es obligatorio");
+            throw new IllegalArgumentException(
+                    "El motivo del bloqueo es obligatorio"
+            );
         }
-        if ("BLOQUEADA".equals(estado)) {
-            throw new IllegalStateException("El alojamiento ya está bloqueado");
-        }
-        this.motivoBloqueo = motivo.trim();
-        this.estado = "BLOQUEADA";
-    }
 
+        if (ESTADO_BLOQUEADA.equals(estado)) {
+            throw new IllegalStateException(
+                    "El alojamiento ya está bloqueado"
+            );
+        }
+
+        this.motivoBloqueo = motivo.trim();
+        this.estado = ESTADO_BLOQUEADA;
+    }
 
     public void actualizarDatos(
             String titulo,
@@ -147,7 +154,7 @@ public class Alojamiento {
                 || nuevoEstado.equals("PENDIENTE_REVISION")
                 || nuevoEstado.equals("ACTIVA")
                 || nuevoEstado.equals("PAUSADA")
-                || nuevoEstado.equals("BLOQUEADA");
+                || nuevoEstado.equals(ESTADO_BLOQUEADA);
 
         if (!estadoReconocido) {
             throw new IllegalArgumentException(
