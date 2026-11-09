@@ -1,6 +1,8 @@
 package co.edu.unbosque.marketplace.booking.web;
 
+import co.edu.unbosque.marketplace.booking.dto.ResumenResenasResponse;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
+import co.edu.unbosque.marketplace.booking.service.ResenaService;
 import co.edu.unbosque.marketplace.booking.service.ReservaService;
 import java.time.LocalDate;
 import org.springframework.http.ResponseEntity;
@@ -11,19 +13,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Endpoints internos para coordinación entre Catalog y Booking. */
+/** Endpoints internos para coordinacion entre Catalog y Booking. */
 @RestController
 @RequestMapping("/internal/alojamientos")
 public class AccommodationReservationsController {
 
     private final ReservaRepository reservas;
     private final ReservaService reservaService;
+    private final ResenaService resenaService;
 
     public AccommodationReservationsController(
             ReservaRepository reservas,
-            ReservaService reservaService) {
+            ReservaService reservaService,
+            ResenaService resenaService) {
         this.reservas = reservas;
         this.reservaService = reservaService;
+        this.resenaService = resenaService;
     }
 
     @GetMapping("/{alojamientoId}/reservas-confirmadas/solapamiento")
@@ -44,5 +49,14 @@ public class AccommodationReservationsController {
 
         int cantidad = reservaService.marcarReservasFuturasEnRevision(alojamientoId);
         return ResponseEntity.ok(cantidad);
+    }
+
+    @GetMapping("/{alojamientoId}/resenas")
+    public ResponseEntity<ResumenResenasResponse> consultarResenas(
+            @PathVariable Long alojamientoId) {
+
+        return ResponseEntity.ok(
+                resenaService.consultarPorAlojamiento(alojamientoId)
+        );
     }
 }

@@ -2,6 +2,8 @@ package co.edu.unbosque.marketplace.catalog.domain;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "alojamientos")
@@ -39,6 +41,31 @@ public class Alojamiento {
 
     @Column(name = "motivo_bloqueo", length = 1000)
     private String motivoBloqueo;
+
+    @Column(name = "tipo_alojamiento", length = 50)
+    private String tipoAlojamiento;
+
+    @Column(columnDefinition = "TEXT")
+    private String reglas;
+
+    @Column(name = "politica_cancelacion", columnDefinition = "TEXT")
+    private String politicaCancelacion;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "alojamiento_servicios",
+            joinColumns = @JoinColumn(name = "id_alojamiento")
+    )
+    @Column(name = "servicio", nullable = false, length = 100)
+    private List<String> servicios = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(
+            name = "alojamiento_imagenes",
+            joinColumns = @JoinColumn(name = "id_alojamiento")
+    )
+    @Column(name = "imagen_url", nullable = false, length = 1000)
+    private List<String> imagenes = new ArrayList<>();
 
     protected Alojamiento() {
     }
@@ -108,6 +135,48 @@ public class Alojamiento {
         return motivoBloqueo;
     }
 
+    public String getTipoAlojamiento() {
+        return tipoAlojamiento;
+    }
+
+    public String getReglas() {
+        return reglas;
+    }
+
+    public String getPoliticaCancelacion() {
+        return politicaCancelacion;
+    }
+
+    public List<String> getServicios() {
+        return servicios;
+    }
+
+    public List<String> getImagenes() {
+        return imagenes;
+    }
+
+    public void actualizarDatosComplementarios(
+            String tipoAlojamiento,
+            String reglas,
+            String politicaCancelacion,
+            List<String> servicios,
+            List<String> imagenes
+    ) {
+        this.tipoAlojamiento = tipoAlojamiento;
+        this.reglas = reglas;
+        this.politicaCancelacion = politicaCancelacion;
+
+        this.servicios.clear();
+        if (servicios != null) {
+            this.servicios.addAll(servicios);
+        }
+
+        this.imagenes.clear();
+        if (imagenes != null) {
+            this.imagenes.addAll(imagenes);
+        }
+    }
+
     public void bloquear(String motivo) {
         if (motivo == null || motivo.isBlank()) {
             throw new IllegalArgumentException(
@@ -158,7 +227,7 @@ public class Alojamiento {
 
         if (!estadoReconocido) {
             throw new IllegalArgumentException(
-                    "Estado de publicación no reconocido: " + nuevoEstado
+                    "Estado de publicacion no reconocido: " + nuevoEstado
             );
         }
 

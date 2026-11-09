@@ -3,7 +3,9 @@ package co.edu.unbosque.marketplace.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -11,10 +13,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
+import co.edu.unbosque.marketplace.catalog.domain.PeriodoDisponibilidad;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
 import co.edu.unbosque.marketplace.catalog.client.AuditClient;
+import co.edu.unbosque.marketplace.catalog.client.BookingResenaClient;
+import co.edu.unbosque.marketplace.catalog.dto.ResenaResponse;
+import co.edu.unbosque.marketplace.catalog.dto.ResumenResenasResponse;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +54,180 @@ class AlojamientoControllerTest {
     @Autowired
     private AlojamientoRepository alojamientoRepository;
 
+    @Autowired
+    private PeriodoDisponibilidadRepository periodoDisponibilidadRepository;
+
     // Simula Backoffice para no depender de un servicio externo.
     @MockitoBean
     private AuditClient auditClient;
 
+    @MockitoBean
+    private BookingResenaClient bookingResenaClient;
+
+    // PRUEBAS SCRUM-24: CONSULTAR DETALLE DE PUBLICACION
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void permiteConsultarDetalleDeAlojamientoActivo() throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento activo",
+                "Apartamento cerca del centro",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("150000"),
+                4
+        );
+
+        alojamiento.actualizarDatosComplementarios(
+                "APARTAMENTO",
+                "No fumar. No se permiten fiestas.",
+                "Cancelación flexible.",
+                java.util.List.of("WiFi", "Cocina"),
+                java.util.List.of("https://ejemplo.com/imagen1.jpg")
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamiento = alojamientoRepository.save(alojamiento);
+
+        mockMvc.perform(get("/api/alojamientos/" + alojamiento.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(alojamiento.getId()))
+                .andExpect(jsonPath("$.titulo").value("Apartamento activo"))
+                .andExpect(jsonPath("$.descripcion")
+                        .value("Apartamento cerca del centro"))
+                .andExpect(jsonPath("$.direccion").value("Calle 10"))
+                .andExpect(jsonPath("$.ciudad").value("Bogota"))
+                .andExpect(jsonPath("$.precioNoche").value(150000))
+                .andExpect(jsonPath("$.capacidad").value(4))
+                .andExpect(jsonPath("$.estado").value("ACTIVA"))
+                .andExpect(jsonPath("$.tipoAlojamiento").value("APARTAMENTO"))
+                .andExpect(jsonPath("$.reglas").value("No fumar. No se permiten fiestas."))
+                .andExpect(jsonPath("$.politicaCancelacion").value("Cancelación flexible."))
+                .andExpect(jsonPath("$.servicios[0]").value("WiFi"))
+                .andExpect(jsonPath("$.servicios[1]").value("Cocina"))
+                .andExpect(jsonPath("$.imagenes[0]").value("https://ejemplo.com/imagen1.jpg"));
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void devuelve404CuandoElAlojamientoNoEstaActivo() throws Exception {
+
+        Alojamiento alojamiento = alojamientoRepository.save(
+                new Alojamiento(
+                        100L,
+                        "Apartamento en borrador",
+                        "Alojamiento no publicado",
+                        "Calle 10",
+                        "Bogota",
+                        new BigDecimal("150000"),
+                        4
+                )
+        );
+
+        mockMvc.perform(get("/api/alojamientos/" + alojamiento.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void devuelve404CuandoElAlojamientoNoExiste() throws Exception {
+
+        mockMvc.perform(get("/api/alojamientos/999999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void detalleDeAlojamientoActivoIncluyePeriodosDeDisponibilidad() throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento con disponibilidad",
+                "Apartamento cerca del centro",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("150000"),
+                4
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamiento = alojamientoRepository.save(alojamiento);
+
+        PeriodoDisponibilidad periodo = new PeriodoDisponibilidad(
+                alojamiento,
+                LocalDate.of(2026, 12, 1),
+                LocalDate.of(2026, 12, 10)
+        );
+
+        periodoDisponibilidadRepository.save(periodo);
+
+        mockMvc.perform(get("/api/alojamientos/" + alojamiento.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.periodosDisponibilidad").isArray())
+                .andExpect(jsonPath("$.periodosDisponibilidad.length()").value(1))
+                .andExpect(jsonPath("$.periodosDisponibilidad[0].alojamientoId")
+                        .value(alojamiento.getId()))
+                .andExpect(jsonPath("$.periodosDisponibilidad[0].fechaInicio")
+                        .value("2026-12-01"))
+                .andExpect(jsonPath("$.periodosDisponibilidad[0].fechaFin")
+                        .value("2026-12-10"))
+                .andExpect(jsonPath("$.periodosDisponibilidad[0].estado")
+                        .value("DISPONIBLE"));
+    }
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void detalleDeAlojamientoIncluyePromedioYResenasVisibles() throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento con resenas",
+                "Alojamiento para pruebas",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("150000"),
+                4
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamiento = alojamientoRepository.save(alojamiento);
+
+        when(bookingResenaClient.consultarResenas(alojamiento.getId()))
+                .thenReturn(new ResumenResenasResponse(
+                        new BigDecimal("4.50"),
+                        2,
+                        List.of(
+                                new ResenaResponse(
+                                        1L,
+                                        201L,
+                                        5,
+                                        "Excelente alojamiento",
+                                        LocalDateTime.of(2026, 11, 1, 10, 0)
+                                ),
+                                new ResenaResponse(
+                                        2L,
+                                        202L,
+                                        4,
+                                        "Muy buena experiencia",
+                                        LocalDateTime.of(2026, 10, 28, 15, 30)
+                                )
+                        )
+                ));
+
+        mockMvc.perform(get("/api/alojamientos/" + alojamiento.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.promedioCalificacion").value(4.50))
+                .andExpect(jsonPath("$.cantidadResenas").value(2))
+                .andExpect(jsonPath("$.resenas.length()").value(2))
+                .andExpect(jsonPath("$.resenas[0].calificacion").value(5))
+                .andExpect(jsonPath("$.resenas[0].comentario")
+                        .value("Excelente alojamiento"))
+                .andExpect(jsonPath("$.resenas[1].calificacion").value(4))
+                .andExpect(jsonPath("$.resenas[1].comentario")
+                        .value("Muy buena experiencia"));
+    }
     // PRUEBAS ORIGINALES
 
     @Test

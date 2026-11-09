@@ -1,13 +1,19 @@
 package co.edu.unbosque.marketplace.catalog.service;
 
 import co.edu.unbosque.marketplace.catalog.client.AuditClient;
-
 import co.edu.unbosque.marketplace.catalog.client.BookingReviewClient;
+import co.edu.unbosque.marketplace.catalog.client.BookingResenaClient;
 import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.dto.DetalleAlojamientoResponse;
+import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadResponse;
+import co.edu.unbosque.marketplace.catalog.dto.ResumenResenasResponse;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
+
 import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,22 +24,84 @@ import org.springframework.web.server.ResponseStatusException;
 public class AlojamientoService {
 
     private final AlojamientoRepository repository;
+    private final PeriodoDisponibilidadRepository periodoDisponibilidadRepository;
     private final RequisitosMinimosAlojamientoValidator validator;
     private final AuditClient auditClient;
     private final BookingReviewClient bookingReviewClient;
+    private final BookingResenaClient bookingResenaClient;
     private final NotificationClient notificationClient;
+
     public AlojamientoService(
             AlojamientoRepository repository,
+            PeriodoDisponibilidadRepository periodoDisponibilidadRepository,
             RequisitosMinimosAlojamientoValidator validator,
             AuditClient auditClient,
             BookingReviewClient bookingReviewClient,
+            BookingResenaClient bookingResenaClient,
             NotificationClient notificationClient
     ) {
         this.repository = repository;
+        this.periodoDisponibilidadRepository = periodoDisponibilidadRepository;
         this.validator = validator;
         this.auditClient = auditClient;
         this.bookingReviewClient = bookingReviewClient;
+        this.bookingResenaClient = bookingResenaClient;
         this.notificationClient = notificationClient;
+    }
+
+    // SCRUM-24: CONSULTAR DETALLE DE PUBLICACION
+
+    @Transactional(readOnly = true)
+    public DetalleAlojamientoResponse consultarDetalle(Long alojamientoId) {
+
+        Alojamiento alojamiento = repository.findById(alojamientoId)
+                .filter(a -> "ACTIVA".equals(a.getEstado()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Alojamiento no encontrado"
+                ));
+
+        List<PeriodoDisponibilidadResponse> disponibilidad =
+                periodoDisponibilidadRepository
+                        .findByAlojamientoIdOrderByFechaInicioAsc(alojamientoId)
+                        .stream()
+                        .map(PeriodoDisponibilidadResponse::desde)
+                        .toList();
+        ResumenResenasResponse resumenResenas;
+
+        try {
+            resumenResenas = bookingResenaClient.consultarResenas(alojamientoId);
+        } catch (RestClientException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No fue posible consultar las reseñas del alojamiento",
+                    exception
+            );
+        }
+
+        if (resumenResenas == null) {
+            resumenResenas = new ResumenResenasResponse(null, 0, List.of());
+        }
+
+        return new DetalleAlojamientoResponse(
+                alojamiento.getId(),
+                alojamiento.getTitulo(),
+                alojamiento.getDescripcion(),
+                alojamiento.getDireccion(),
+                alojamiento.getCiudad(),
+                alojamiento.getPrecioNoche(),
+                alojamiento.getCapacidad(),
+                alojamiento.getEstado(),
+                alojamiento.getTipoAlojamiento(),
+                alojamiento.getReglas(),
+                alojamiento.getPoliticaCancelacion(),
+                alojamiento.getServicios(),
+                alojamiento.getImagenes(),
+                disponibilidad,
+                resumenResenas.promedio(),
+                resumenResenas.cantidad(),
+                resumenResenas.resenas() == null ? List.of() : resumenResenas.resenas()
+        );
     }
 
     @Transactional
@@ -47,6 +115,14 @@ public class AlojamientoService {
                 request.ciudad(),
                 request.precioNoche(),
                 request.capacidad()
+        );
+
+        alojamiento.actualizarDatosComplementarios(
+                request.tipoAlojamiento(),
+                request.reglas(),
+                request.politicaCancelacion(),
+                request.servicios(),
+                request.imagenes()
         );
 
         return repository.save(alojamiento);
@@ -94,7 +170,7 @@ public class AlojamientoService {
                         usuarioId,
                         alojamientoGuardado.getId()
                 ),
-                "activación"
+                "activaciÃ³n"
         );
 
         return alojamientoGuardado;
@@ -117,7 +193,7 @@ public class AlojamientoService {
         if ("BLOQUEADA".equals(alojamiento.getEstado())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "No se puede editar una publicación bloqueada"
+                    "No se puede editar una publicaciÃ³n bloqueada"
             );
         }
 
@@ -138,7 +214,7 @@ public class AlojamientoService {
                         usuarioId,
                         alojamientoGuardado.getId()
                 ),
-                "edición"
+                "ediciÃ³n"
         );
 
         return alojamientoGuardado;
@@ -151,7 +227,6 @@ public class AlojamientoService {
             Long alojamientoId
     ) {
 
-        // Utiliza el mismo bloqueo que el proceso de reserva.
         Alojamiento alojamiento = buscarYAutorizarConBloqueo(
                 usuarioId,
                 esAdministrador,
@@ -202,9 +277,15 @@ public class AlojamientoService {
         try {
             alojamiento.bloquear(motivo);
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    ex.getMessage()
+            );
         } catch (IllegalStateException ex) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    ex.getMessage()
+            );
         }
 
         Alojamiento bloqueado = repository.saveAndFlush(alojamiento);
@@ -214,7 +295,9 @@ public class AlojamientoService {
             notificationClient.notificarBloqueo(
                     alojamiento.getHostId(), alojamientoId, motivo
             );
-            auditClient.registrarBloqueo(administradorId, alojamientoId, motivo);
+            auditClient.registrarBloqueo(
+                    administradorId, alojamientoId, motivo
+            );
         }, "bloqueo");
 
         return bloqueado;
@@ -264,7 +347,7 @@ public class AlojamientoService {
                 && (usuarioId == null || !usuarioId.equals(alojamiento.getHostId()))) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "No tienes permiso para modificar esta publicación"
+                    "No tienes permiso para modificar esta publicaciÃ³n"
             );
         }
     }
@@ -278,8 +361,8 @@ public class AlojamientoService {
         } catch (RestClientException exception) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "No se pudo completar la operación porque falló "
-                            + "el registro de auditoría de " + nombreOperacion,
+                    "No se pudo completar la operaciÃ³n porque fallÃ³ "
+                            + "el registro de auditorÃ­a de " + nombreOperacion,
                     exception
             );
         }
