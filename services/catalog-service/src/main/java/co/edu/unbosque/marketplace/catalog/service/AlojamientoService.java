@@ -6,10 +6,13 @@ import co.edu.unbosque.marketplace.catalog.client.BookingResenaClient;
 import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.dto.BusquedaAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.dto.ResultadoBusquedaAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.dto.DetalleAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadResponse;
 import co.edu.unbosque.marketplace.catalog.dto.ResumenResenasResponse;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import co.edu.unbosque.marketplace.catalog.repository.AlojamientoSpecification;
 import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
 
 import java.util.List;
@@ -49,6 +52,56 @@ public class AlojamientoService {
         this.notificationClient = notificationClient;
     }
 
+    // SCRUM-72: BUSQUEDA DE ALOJAMIENTOS CON FILTROS
+
+    @Transactional(readOnly = true)
+    public List<ResultadoBusquedaAlojamientoResponse> buscar(
+            BusquedaAlojamientoRequest filtros) {
+
+        if (filtros == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Los filtros de búsqueda son obligatorios"
+            );
+        }
+
+        if (filtros.capacidad() != null && filtros.capacidad() < 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La capacidad debe ser mayor que cero"
+            );
+        }
+
+        if (filtros.precioMinimo() != null
+                && filtros.precioMinimo().signum() < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El precio mínimo no puede ser negativo"
+            );
+        }
+
+        if (filtros.precioMaximo() != null
+                && filtros.precioMaximo().signum() < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El precio máximo no puede ser negativo"
+            );
+        }
+
+        if (filtros.precioMinimo() != null
+                && filtros.precioMaximo() != null
+                && filtros.precioMinimo().compareTo(filtros.precioMaximo()) > 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El precio mínimo no puede superar el precio máximo"
+            );
+        }
+
+        return repository.findAll(AlojamientoSpecification.conFiltros(filtros))
+                .stream()
+                .map(ResultadoBusquedaAlojamientoResponse::desde)
+                .toList();
+    }
     // SCRUM-24: CONSULTAR DETALLE DE PUBLICACION
 
     @Transactional(readOnly = true)

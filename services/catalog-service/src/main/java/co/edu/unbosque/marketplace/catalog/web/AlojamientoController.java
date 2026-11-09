@@ -3,10 +3,13 @@ package co.edu.unbosque.marketplace.catalog.web;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.dto.BloquearAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.dto.BusquedaAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.dto.ResultadoBusquedaAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
 import co.edu.unbosque.marketplace.catalog.dto.DetalleAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.service.AlojamientoService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,6 +25,14 @@ public class AlojamientoController {
         this.service = service;
     }
 
+    // SCRUM-72: BUSCAR ALOJAMIENTOS CON FILTROS
+
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ResultadoBusquedaAlojamientoResponse>> buscar(
+            @ModelAttribute BusquedaAlojamientoRequest filtros
+    ) {
+        return ResponseEntity.ok(service.buscar(filtros));
+    }
     // SCRUM-24: CONSULTAR DETALLE DE PUBLICACION
 
     @GetMapping("/{id}")
