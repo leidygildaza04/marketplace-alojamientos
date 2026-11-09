@@ -1,3 +1,4 @@
+
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,9 +18,13 @@ export class Home {
   private readonly marketplace = inject(MarketplaceDataService);
   private readonly session = inject(AuthSessionService);
 
-  get role() { return this.session.role; }
+  get role() {
+    return this.session.role;
+  }
 
-  cerrarSesion(): void { this.session.signOut(); }
+  cerrarSesion(): void {
+    this.session.signOut();
+  }
 
   destino = '';
   llegada = '';
@@ -28,7 +33,12 @@ export class Home {
   tipo = '';
   precioMinimo: number | null = null;
   precioMaximo: number | null = null;
-  serviciosSeleccionados = { wifi: false, cocina: false, parqueadero: false, piscina: false };
+  serviciosSeleccionados = {
+    wifi: false,
+    cocina: false,
+    parqueadero: false,
+    piscina: false,
+  };
   busquedaRealizada = false;
   errorFechas = '';
   errorComparacion = '';
@@ -53,17 +63,21 @@ export class Home {
         this.serviciosSeleccionados.piscina && 'Piscina',
       ].filter((amenity): amenity is string => Boolean(amenity)),
     });
-    return this.soloFavoritos ? resultados.filter((item) => item.favorite) : resultados;
+
+    return this.soloFavoritos
+      ? resultados.filter((item) => item.favorite)
+      : resultados;
   }
 
   get alojamientosComparados(): Accommodation[] {
     return this.marketplace.accommodations.filter(
-      (item) => item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
+      (item) => this.seleccionComparacion.has(item.id),
     );
   }
 
   buscar(): void {
     this.errorFechas = '';
+
     if (Boolean(this.llegada) !== Boolean(this.salida)) {
       this.errorFechas = 'Selecciona tanto la fecha de llegada como la de salida.';
     } else if (this.llegada && this.llegada < this.fechaMinima) {
@@ -71,9 +85,15 @@ export class Home {
     } else if (this.llegada && this.salida && this.salida <= this.llegada) {
       this.errorFechas = 'La salida debe ser posterior a la llegada.';
     }
-    if (this.precioMinimo != null && this.precioMaximo != null && this.precioMinimo > this.precioMaximo) {
+
+    if (
+      this.precioMinimo != null &&
+      this.precioMaximo != null &&
+      this.precioMinimo > this.precioMaximo
+    ) {
       this.errorFechas = 'El precio mínimo no puede superar el precio máximo.';
     }
+
     if (this.errorFechas) return;
 
     this.busquedaRealizada = true;
@@ -86,6 +106,7 @@ export class Home {
 
   alternarComparacion(alojamiento: Accommodation): void {
     this.errorComparacion = '';
+
     if (this.seleccionComparacion.has(alojamiento.id)) {
       this.seleccionComparacion.delete(alojamiento.id);
     } else if (this.seleccionComparacion.size < 3) {
@@ -114,7 +135,12 @@ export class Home {
     this.tipo = '';
     this.precioMinimo = null;
     this.precioMaximo = null;
-    this.serviciosSeleccionados = { wifi: false, cocina: false, parqueadero: false, piscina: false };
+    this.serviciosSeleccionados = {
+      wifi: false,
+      cocina: false,
+      parqueadero: false,
+      piscina: false,
+    };
     this.busquedaRealizada = false;
   }
 

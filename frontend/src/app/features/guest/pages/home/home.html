@@ -1,4 +1,3 @@
-
 <main class="guest-home">
 
   <header class="navbar">
@@ -15,8 +14,12 @@
       <a routerLink="/inicio" fragment="alojamientos">Alojamientos</a>
       <a routerLink="/inicio" fragment="alojamientos" (click)="verFavoritos()">Favoritos</a>
       <a routerLink="/reservas">Mis reservas</a>
-      @if (role === 'host') { <a routerLink="/anfitrion">Anfitrión</a> }
-      @if (role === 'admin') { <a routerLink="/administracion">Administración</a> }
+      @if (role === 'host') {
+        <a routerLink="/anfitrion">Anfitrión</a>
+      }
+      @if (role === 'admin') {
+        <a routerLink="/administracion">Administración</a>
+      }
     </nav>
 
     <div class="user-actions">
@@ -50,16 +53,17 @@
 
     <div class="hero-image">
       @if (!imagenHeroNoDisponible) {
-      <img
-        src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85"
-        alt="Interior acogedor de un alojamiento"
-        (error)="imagenHeroNoDisponible = true"
-      />
+        <img
+          src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85"
+          alt="Interior acogedor de un alojamiento"
+          (error)="imagenHeroNoDisponible = true"
+        />
       } @else {
         <div class="hero-image-fallback" role="img" aria-label="Fotografía del alojamiento no disponible">
           Fotografía no disponible
         </div>
       }
+
       <div class="image-caption">
         <span class="caption-dot"></span>
         <span>Espacios para vivir nuevas historias</span>
@@ -150,50 +154,103 @@
             <option value="Casa">Casa</option>
           </select>
         </label>
+
         <label class="filter-control">
           <span>Precio mínimo por noche</span>
-          <input type="number" name="precioMinimo" min="0" step="10000" [(ngModel)]="precioMinimo" placeholder="Sin mínimo" />
+          <input
+            type="number"
+            name="precioMinimo"
+            min="0"
+            step="10000"
+            [(ngModel)]="precioMinimo"
+            placeholder="Sin mínimo"
+          />
         </label>
+
         <label class="filter-control">
           <span>Precio máximo por noche</span>
-          <input type="number" name="precioMaximo" min="0" step="10000" [(ngModel)]="precioMaximo" placeholder="Sin máximo" />
+          <input
+            type="number"
+            name="precioMaximo"
+            min="0"
+            step="10000"
+            [(ngModel)]="precioMaximo"
+            placeholder="Sin máximo"
+          />
         </label>
+
         <fieldset class="service-filters">
           <legend>Servicios</legend>
-          <label class="filter-check"><input type="checkbox" name="wifi" [(ngModel)]="serviciosSeleccionados.wifi" /> Wi-Fi</label>
-          <label class="filter-check"><input type="checkbox" name="cocina" [(ngModel)]="serviciosSeleccionados.cocina" /> Cocina equipada</label>
-          <label class="filter-check"><input type="checkbox" name="parqueadero" [(ngModel)]="serviciosSeleccionados.parqueadero" /> Parqueadero</label>
-          <label class="filter-check"><input type="checkbox" name="piscina" [(ngModel)]="serviciosSeleccionados.piscina" /> Piscina</label>
+          <label class="filter-check">
+            <input type="checkbox" name="wifi" [(ngModel)]="serviciosSeleccionados.wifi" />
+            Wi-Fi
+          </label>
+          <label class="filter-check">
+            <input type="checkbox" name="cocina" [(ngModel)]="serviciosSeleccionados.cocina" />
+            Cocina equipada
+          </label>
+          <label class="filter-check">
+            <input type="checkbox" name="parqueadero" [(ngModel)]="serviciosSeleccionados.parqueadero" />
+            Parqueadero
+          </label>
+          <label class="filter-check">
+            <input type="checkbox" name="piscina" [(ngModel)]="serviciosSeleccionados.piscina" />
+            Piscina
+          </label>
         </fieldset>
       </div>
     </form>
+
     @if (errorFechas) {
-      <p class="form-message form-error" id="fecha-error" role="alert">{{ errorFechas }}</p>
+      <p class="form-message form-error" id="fecha-error" role="alert">
+        {{ errorFechas }}
+      </p>
     }
+
     @if (busquedaRealizada) {
-      <p class="form-message" role="status">Las fechas seleccionadas se usarán para consultar la disponibilidad.</p>
+      <p class="form-message" role="status">
+        Las fechas seleccionadas se usarán para consultar la disponibilidad.
+      </p>
     }
   </section>
 
   <section class="accommodations-section" id="alojamientos">
     <div class="section-heading">
       <div>
-        <p class="section-eyebrow">{{ soloFavoritos ? 'TUS FAVORITOS' : 'ALOJAMIENTOS' }}</p>
-        <h2>{{ soloFavoritos ? 'Alojamientos favoritos' : (busquedaRealizada ? 'Resultados de tu búsqueda' : 'Alojamientos que podrían gustarte') }}</h2>
+        <p class="section-eyebrow">
+          {{ soloFavoritos ? 'TUS FAVORITOS' : 'ALOJAMIENTOS' }}
+        </p>
+
+        <h2>
+          {{ soloFavoritos
+            ? 'Alojamientos favoritos'
+            : (busquedaRealizada
+              ? 'Resultados de tu búsqueda'
+              : 'Alojamientos que podrían gustarte') }}
+        </h2>
+
         <p class="section-description">
           Encuentra ese lugar especial para tu próxima aventura.
         </p>
       </div>
 
       <span class="results-count">
-          {{ alojamientosFiltrados.length }}
+        {{ alojamientosFiltrados.length }}
         {{ alojamientosFiltrados.length === 1 ? 'alojamiento' : 'alojamientos' }}
       </span>
+
       @if (seleccionComparacion.size >= 2) {
-        <button class="compare-button" type="button" (click)="verComparacion()">Comparar ({{ seleccionComparacion.size }})</button>
+        <button class="compare-button" type="button" (click)="verComparacion()">
+          Comparar ({{ seleccionComparacion.size }})
+        </button>
       }
     </div>
-    @if (errorComparacion) { <p class="form-message form-error" role="alert">{{ errorComparacion }}</p> }
+
+    @if (errorComparacion) {
+      <p class="form-message form-error" role="alert">
+        {{ errorComparacion }}
+      </p>
+    }
 
     @if (alojamientosFiltrados.length > 0) {
       <div class="accommodation-grid">
@@ -201,14 +258,18 @@
           <article class="accommodation-card">
             <div class="card-image">
               @if (!imagenesNoDisponibles.has(alojamiento.id)) {
-              <img
-                [src]="alojamiento.image"
-                [alt]="alojamiento.title"
-                loading="lazy"
-                (error)="marcarImagenNoDisponible(alojamiento.id)"
-              />
+                <img
+                  [src]="alojamiento.image"
+                  [alt]="alojamiento.title"
+                  loading="lazy"
+                  (error)="marcarImagenNoDisponible(alojamiento.id)"
+                />
               } @else {
-                <div class="image-fallback" role="img" [attr.aria-label]="'Fotografía no disponible para ' + alojamiento.title">
+                <div
+                  class="image-fallback"
+                  role="img"
+                  [attr.aria-label]="'Fotografía no disponible para ' + alojamiento.title"
+                >
                   <span>Fotografía no disponible</span>
                 </div>
               }
@@ -230,7 +291,8 @@
             <div class="card-content">
               <div class="card-location">
                 <span>⌖</span>
-                {{ alojamiento.city }}, {{ alojamiento.country }} · {{ alojamiento.capacity }} huéspedes
+                {{ alojamiento.city }}, {{ alojamiento.country }} ·
+                {{ alojamiento.capacity }} huéspedes
               </div>
 
               <h3>{{ alojamiento.title }}</h3>
@@ -249,8 +311,15 @@
                 </span>
               </div>
 
-              <button class="compare-choice" type="button" [attr.aria-pressed]="seleccionComparacion.has(alojamiento.id)" (click)="alternarComparacion(alojamiento)">
-                {{ seleccionComparacion.has(alojamiento.id) ? '✓ En comparación' : '＋ Comparar' }}
+              <button
+                class="compare-choice"
+                type="button"
+                [attr.aria-pressed]="seleccionComparacion.has(alojamiento.id)"
+                (click)="alternarComparacion(alojamiento)"
+              >
+                {{ seleccionComparacion.has(alojamiento.id)
+                  ? '✓ En comparación'
+                  : '＋ Comparar' }}
               </button>
 
               <a class="details-button" [routerLink]="['/alojamiento', alojamiento.id]">
@@ -263,17 +332,20 @@
     } @else {
       <div class="empty-state">
         <span class="empty-icon">⌕</span>
-        <h3>{{ soloFavoritos ? 'Aún no tienes favoritos' : 'No encontramos alojamientos' }}</h3>
-        <p>{{ soloFavoritos ? 'Marca el corazón de un alojamiento para guardarlo en favoritos.' : 'Busca otra ciudad o el nombre de un alojamiento.' }}</p>
-        <button
-          class="clear-button"
-          type="button"
-          (click)="verTodos()"
-        >
+        <h3>
+          {{ soloFavoritos ? 'Aún no tienes favoritos' : 'No encontramos alojamientos' }}
+        </h3>
+        <p>
+          {{ soloFavoritos
+            ? 'Marca el corazón de un alojamiento para guardarlo en favoritos.'
+            : 'Busca otra ciudad o el nombre de un alojamiento.' }}
+        </p>
+        <button class="clear-button" type="button" (click)="verTodos()">
           Ver todos los alojamientos
         </button>
       </div>
     }
+
     @if (mostrarComparacion && alojamientosComparados.length >= 2) {
       <section class="comparison-panel" aria-labelledby="comparison-title">
         <div class="comparison-heading">
@@ -281,17 +353,95 @@
             <p class="section-eyebrow">COMPARA TUS OPCIONES</p>
             <h3 id="comparison-title">Compara tus opciones</h3>
           </div>
-          <button type="button" class="close-comparison" (click)="cerrarComparacion()">Cerrar</button>
+
+          <button type="button" class="close-comparison" (click)="cerrarComparacion()">
+            Cerrar
+          </button>
         </div>
+
         <div class="comparison-scroll">
           <table>
-            <thead><tr><th scope="col">Característica</th>@for (item of alojamientosComparados; track item.id) { <th scope="col">{{ item.title }}</th> }</tr></thead>
+            <thead>
+              <tr>
+                <th scope="col">Característica</th>
+
+                @for (item of alojamientosComparados; track item.id) {
+                  <th scope="col">
+                    {{ item.title }}
+
+                    @if (item.status !== 'ACTIVA') {
+                      <span class="form-error">(No disponible)</span>
+                    }
+                  </th>
+                }
+              </tr>
+            </thead>
+
             <tbody>
-              <tr><th scope="row">Precio por noche</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</td> }</tr>
-              <tr><th scope="row">Capacidad</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.capacity }} huéspedes</td> }</tr>
-              <tr><th scope="row">Tipo</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.type }}</td> }</tr>
-              <tr><th scope="row">Calificación</th>@for (item of alojamientosComparados; track item.id) { <td>★ {{ item.rating }}</td> }</tr>
-              <tr><th scope="row">Servicios</th>@for (item of alojamientosComparados; track item.id) { <td>{{ item.amenities.join(', ') }}</td> }</tr>
+              <tr>
+                <th scope="row">Precio por noche</th>
+                @for (item of alojamientosComparados; track item.id) {
+                  <td>
+                    @if (item.status === 'ACTIVA') {
+                      {{ item.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}
+                    } @else {
+                      No disponible
+                    }
+                  </td>
+                }
+              </tr>
+
+              <tr>
+                <th scope="row">Capacidad</th>
+                @for (item of alojamientosComparados; track item.id) {
+                  <td>
+                    @if (item.status === 'ACTIVA') {
+                      {{ item.capacity }} huéspedes
+                    } @else {
+                      No disponible
+                    }
+                  </td>
+                }
+              </tr>
+
+              <tr>
+                <th scope="row">Tipo</th>
+                @for (item of alojamientosComparados; track item.id) {
+                  <td>
+                    @if (item.status === 'ACTIVA') {
+                      {{ item.type }}
+                    } @else {
+                      No disponible
+                    }
+                  </td>
+                }
+              </tr>
+
+              <tr>
+                <th scope="row">Calificación</th>
+                @for (item of alojamientosComparados; track item.id) {
+                  <td>
+                    @if (item.status === 'ACTIVA') {
+                      ★ {{ item.rating }}
+                    } @else {
+                      No disponible
+                    }
+                  </td>
+                }
+              </tr>
+
+              <tr>
+                <th scope="row">Servicios</th>
+                @for (item of alojamientosComparados; track item.id) {
+                  <td>
+                    @if (item.status === 'ACTIVA') {
+                      {{ item.amenities.join(', ') }}
+                    } @else {
+                      No disponible
+                    }
+                  </td>
+                }
+              </tr>
             </tbody>
           </table>
         </div>
