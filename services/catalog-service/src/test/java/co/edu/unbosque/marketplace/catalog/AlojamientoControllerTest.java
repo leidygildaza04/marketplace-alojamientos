@@ -84,8 +84,8 @@ class AlojamientoControllerTest {
                 "APARTAMENTO",
                 "No fumar. No se permiten fiestas.",
                 "Cancelación flexible.",
-                java.util.List.of("WiFi", "Cocina"),
-                java.util.List.of("https://ejemplo.com/imagen1.jpg")
+                List.of("WiFi", "Cocina"),
+                List.of("https://ejemplo.com/imagen1.jpg")
         );
 
         alojamiento.cambiarEstadoA("ACTIVA");
@@ -228,6 +228,7 @@ class AlojamientoControllerTest {
                 .andExpect(jsonPath("$.resenas[1].comentario")
                         .value("Muy buena experiencia"));
     }
+
     // PRUEBAS ORIGINALES
 
     @Test
@@ -786,6 +787,47 @@ class AlojamientoControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].titulo")
                         .value("Apartamento con todos los filtros"));
+    }
+
+    // SCRUM-74: BUSQUEDA SIN RESULTADOS CON FILTROS COMBINADOS
+
+    @Test
+    @WithMockUser(username = "200", roles = "GUEST")
+    void devuelveListaVaciaCuandoNingunAlojamientoCumpleTodosLosFiltros()
+            throws Exception {
+
+        Alojamiento alojamiento = new Alojamiento(
+                100L,
+                "Apartamento para busqueda sin resultados",
+                "Alojamiento para pruebas",
+                "Calle 10",
+                "Bogota",
+                new BigDecimal("180000"),
+                5
+        );
+
+        alojamiento.actualizarDatosComplementarios(
+                "APARTAMENTO",
+                "No fumar",
+                "Flexible",
+                List.of("WiFi", "Cocina"),
+                List.of()
+        );
+
+        alojamiento.cambiarEstadoA("ACTIVA");
+        alojamientoRepository.save(alojamiento);
+
+        mockMvc.perform(get("/api/alojamientos/buscar")
+                        .param("ciudad", "Medellin")
+                        .param("capacidad", "8")
+                        .param("precioMinimo", "300000")
+                        .param("precioMaximo", "500000")
+                        .param("tipoAlojamiento", "CASA")
+                        .param("servicios", "Piscina")
+                        .param("servicios", "Jacuzzi"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     // SCRUM-73: EXCLUIR ALOJAMIENTOS SIN DISPONIBILIDAD
