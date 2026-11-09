@@ -7,6 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.edu.unbosque.marketplace.catalog.client.AuditClient;
+import co.edu.unbosque.marketplace.catalog.client.BookingReviewClient;
+import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import java.math.BigDecimal;
@@ -28,6 +30,12 @@ class AlojamientoServiceAuditTest {
     @Mock
     private AuditClient auditClient;
 
+    @Mock
+    private BookingReviewClient bookingReviewClient;
+
+    @Mock
+    private NotificationClient notificationClient;
+
     private AlojamientoService service;
 
     @BeforeEach
@@ -35,7 +43,9 @@ class AlojamientoServiceAuditTest {
         service = new AlojamientoService(
                 repository,
                 new RequisitosMinimosAlojamientoValidator(),
-                auditClient
+                auditClient,
+                bookingReviewClient,
+                notificationClient
         );
     }
 

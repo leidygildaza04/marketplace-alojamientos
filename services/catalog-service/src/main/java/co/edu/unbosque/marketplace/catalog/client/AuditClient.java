@@ -45,6 +45,14 @@ public class AuditClient {
                 "Pausa de la publicación del alojamiento"
         );
     }
+    public void registrarBloqueo(Long administradorId, Long alojamientoId, String motivo) {
+        registrarEvento(
+                administradorId,
+                alojamientoId,
+                "BLOQUEAR_ALOJAMIENTO",
+                "Motivo del bloqueo: " + motivo
+        );
+    }
 
     private void registrarEvento(
             Long usuarioId,

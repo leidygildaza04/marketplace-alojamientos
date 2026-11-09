@@ -44,6 +44,8 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.PATCH, "/api/alojamientos/*/pausar")
                     .hasAnyRole("HOST", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/alojamientos/*/bloquear")
+                    .hasRole("ADMIN")
 
                 .requestMatchers("/api/v1/**", "/internal/**").permitAll()
                 .anyRequest().authenticated()

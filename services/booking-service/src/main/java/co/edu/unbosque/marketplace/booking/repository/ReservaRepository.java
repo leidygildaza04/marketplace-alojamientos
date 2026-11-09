@@ -12,4 +12,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     boolean existsByAlojamientoIdAndEstadoAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
             Long alojamientoId, String estado, LocalDate fechaFin, LocalDate fechaInicio);
+
+    List<Reserva> findByAlojamientoIdAndEstadoAndCheckOutGreaterThanEqual(
+            Long alojamientoId, String estado, LocalDate fecha);
 }
