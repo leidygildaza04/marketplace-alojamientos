@@ -65,6 +65,21 @@ public class AlojamientoService {
             );
         }
 
+        if ((filtros.fechaInicio() == null) != (filtros.fechaFin() == null)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Las fechas de inicio y fin deben enviarse juntas"
+            );
+        }
+
+        if (filtros.fechaInicio() != null
+                && !filtros.fechaInicio().isBefore(filtros.fechaFin())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La fecha de inicio debe ser anterior a la fecha de fin"
+            );
+        }
+
         if (filtros.capacidad() != null && filtros.capacidad() < 1) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
