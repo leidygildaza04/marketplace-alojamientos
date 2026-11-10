@@ -1,6 +1,6 @@
-
 package co.edu.unbosque.marketplace.booking;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -109,7 +109,7 @@ class ReservationLifecycleTest {
         JsonNode segundaReserva = objectMapper.readTree(
                 segundaRespuesta.getResponse().getContentAsString());
 
-        org.junit.jupiter.api.Assertions.assertEquals(
+        assertEquals(
                 primeraReserva.get("id").asLong(),
                 segundaReserva.get("id").asLong());
 
@@ -170,6 +170,44 @@ class ReservationLifecycleTest {
                         "/api/v1/reservas/" + reserva.getId() + "/cancelar"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("CANCELADA"));
+
+        verify(catalog).liberar(44L, reserva.getId());
+    }
+
+    @Test
+    void rechazaReservaCuandoElPagoEsRechazadoYLiberarElPeriodo() throws Exception {
+
+        doNothing().when(catalog).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
+
+        doNothing().when(catalog).liberar(
+                eq(44L),
+                any(Long.class));
+
+        mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "pago-rechazado-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":5,\"alojamientoId\":44,"
+                                + "\"checkIn\":\"2027-02-01\","
+                                + "\"checkOut\":\"2027-02-04\","
+                                + "\"resultadoPago\":\"RECHAZADO\"}"))
+                .andExpect(status().is(402));
+
+        Reserva reserva = reservas.findByUserIdAndClaveIdempotencia(
+                5L,
+                "pago-rechazado-001"
+        ).orElseThrow();
+
+        assertEquals("RECHAZADA", reserva.getEstado());
+
+        verify(catalog).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
 
         verify(catalog).liberar(44L, reserva.getId());
     }
