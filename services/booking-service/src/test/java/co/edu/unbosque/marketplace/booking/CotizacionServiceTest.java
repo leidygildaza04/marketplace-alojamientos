@@ -1,4 +1,3 @@
-
 package co.edu.unbosque.marketplace.booking;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -199,5 +199,25 @@ class CotizacionServiceTest {
         assertThrows(
                 ResponseStatusException.class,
                 () -> cotizaciones.calcular(request));
+    }
+
+    @Test
+    void rechazaFechaDeSalidaAnteriorAEntrada() {
+
+        CrearCotizacionRequest request = new CrearCotizacionRequest(
+                44L,
+                LocalDate.of(2027, 2, 5),
+                LocalDate.of(2027, 2, 4),
+                List.of());
+
+        ResponseStatusException excepcion = assertThrows(
+                ResponseStatusException.class,
+                () -> cotizaciones.calcular(request));
+
+        assertEquals(
+                HttpStatus.BAD_REQUEST,
+                excepcion.getStatusCode());
+
+        verifyNoInteractions(catalog);
     }
 }
