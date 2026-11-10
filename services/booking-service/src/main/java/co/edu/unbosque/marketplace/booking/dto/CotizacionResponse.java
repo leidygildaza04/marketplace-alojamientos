@@ -14,6 +14,10 @@ public record CotizacionResponse(
         BigDecimal tarifaLimpieza,
         List<ServicioAdicionalCotizadoResponse> serviciosAdicionales,
         BigDecimal totalServiciosAdicionales,
+        BigDecimal porcentajeServicio,
+        BigDecimal tarifaServicio,
+        BigDecimal porcentajeDescuento,
+        BigDecimal descuento,
         BigDecimal total
 ) {
 }
