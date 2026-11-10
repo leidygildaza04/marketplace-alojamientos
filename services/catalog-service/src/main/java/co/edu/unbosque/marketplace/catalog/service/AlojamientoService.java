@@ -5,16 +5,20 @@ import co.edu.unbosque.marketplace.catalog.client.BookingReviewClient;
 import co.edu.unbosque.marketplace.catalog.client.BookingResenaClient;
 import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
-import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
+import co.edu.unbosque.marketplace.catalog.domain.ServicioAdicional;
 import co.edu.unbosque.marketplace.catalog.dto.BusquedaAlojamientoRequest;
-import co.edu.unbosque.marketplace.catalog.dto.ResultadoBusquedaAlojamientoResponse;
+import co.edu.unbosque.marketplace.catalog.dto.CrearAlojamientoRequest;
 import co.edu.unbosque.marketplace.catalog.dto.DetalleAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.dto.PeriodoDisponibilidadResponse;
+import co.edu.unbosque.marketplace.catalog.dto.ResultadoBusquedaAlojamientoResponse;
 import co.edu.unbosque.marketplace.catalog.dto.ResumenResenasResponse;
+import co.edu.unbosque.marketplace.catalog.dto.ServicioAdicionalRequest;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoSpecification;
 import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -117,6 +121,7 @@ public class AlojamientoService {
                 .map(ResultadoBusquedaAlojamientoResponse::desde)
                 .toList();
     }
+
     // SCRUM-24: CONSULTAR DETALLE DE PUBLICACION
 
     @Transactional(readOnly = true)
@@ -135,6 +140,7 @@ public class AlojamientoService {
                         .stream()
                         .map(PeriodoDisponibilidadResponse::desde)
                         .toList();
+
         ResumenResenasResponse resumenResenas;
 
         try {
@@ -168,9 +174,13 @@ public class AlojamientoService {
                 disponibilidad,
                 resumenResenas.promedio(),
                 resumenResenas.cantidad(),
-                resumenResenas.resenas() == null ? List.of() : resumenResenas.resenas()
+                resumenResenas.resenas() == null
+                        ? List.of()
+                        : resumenResenas.resenas()
         );
     }
+
+    // SCRUM-75: CREAR ALOJAMIENTO CON TARIFAS Y SERVICIOS ADICIONALES
 
     @Transactional
     public Alojamiento crear(Long hostId, CrearAlojamientoRequest request) {
@@ -192,6 +202,8 @@ public class AlojamientoService {
                 request.servicios(),
                 request.imagenes()
         );
+
+        actualizarTarifasDesdeRequest(alojamiento, request);
 
         return repository.save(alojamiento);
     }
@@ -238,11 +250,13 @@ public class AlojamientoService {
                         usuarioId,
                         alojamientoGuardado.getId()
                 ),
-                "activaciÃ³n"
+                "activación"
         );
 
         return alojamientoGuardado;
     }
+
+    // SCRUM-75: EDITAR ALOJAMIENTO Y SUS TARIFAS
 
     @Transactional
     public Alojamiento editar(
@@ -261,7 +275,7 @@ public class AlojamientoService {
         if ("BLOQUEADA".equals(alojamiento.getEstado())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "No se puede editar una publicaciÃ³n bloqueada"
+                    "No se puede editar una publicación bloqueada"
             );
         }
 
@@ -274,6 +288,8 @@ public class AlojamientoService {
                 request.capacidad()
         );
 
+        actualizarTarifasDesdeRequest(alojamiento, request);
+
         Alojamiento alojamientoGuardado =
                 repository.saveAndFlush(alojamiento);
 
@@ -282,7 +298,7 @@ public class AlojamientoService {
                         usuarioId,
                         alojamientoGuardado.getId()
                 ),
-                "ediciÃ³n"
+                "edición"
         );
 
         return alojamientoGuardado;
@@ -332,6 +348,7 @@ public class AlojamientoService {
             Long alojamientoId,
             String motivo
     ) {
+
         if (!esAdministrador) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
@@ -361,14 +378,71 @@ public class AlojamientoService {
         registrarAuditoria(() -> {
             bookingReviewClient.enviarReservasARevisionManual(alojamientoId);
             notificationClient.notificarBloqueo(
-                    alojamiento.getHostId(), alojamientoId, motivo
+                    alojamiento.getHostId(),
+                    alojamientoId,
+                    motivo
             );
             auditClient.registrarBloqueo(
-                    administradorId, alojamientoId, motivo
+                    administradorId,
+                    alojamientoId,
+                    motivo
             );
         }, "bloqueo");
 
         return bloqueado;
+    }
+
+    // SCRUM-75: ACTUALIZAR TARIFA DE LIMPIEZA Y SERVICIOS ADICIONALES
+
+    private void actualizarTarifasDesdeRequest(
+            Alojamiento alojamiento,
+            CrearAlojamientoRequest request
+    ) {
+
+        BigDecimal tarifaLimpieza = request.tarifaLimpieza() != null
+                ? request.tarifaLimpieza()
+                : alojamiento.getTarifaLimpieza();
+
+        List<ServicioAdicional> serviciosAdicionales =
+                request.serviciosAdicionales() != null
+                        ? convertirServiciosAdicionales(request.serviciosAdicionales())
+                        : new ArrayList<>(alojamiento.getServiciosAdicionales());
+
+        alojamiento.actualizarTarifas(
+                tarifaLimpieza,
+                serviciosAdicionales
+        );
+    }
+
+    private List<ServicioAdicional> convertirServiciosAdicionales(
+            List<ServicioAdicionalRequest> servicios
+    ) {
+
+        if (servicios == null) {
+            return List.of();
+        }
+
+        return servicios.stream()
+                .map(servicio -> {
+
+                    if (servicio == null
+                            || servicio.nombre() == null
+                            || servicio.nombre().isBlank()
+                            || servicio.precio() == null
+                            || servicio.precio().compareTo(BigDecimal.ZERO) < 0) {
+
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Los servicios adicionales deben tener nombre y precio válido"
+                        );
+                    }
+
+                    return new ServicioAdicional(
+                            servicio.nombre().trim(),
+                            servicio.precio()
+                    );
+                })
+                .toList();
     }
 
     private Alojamiento buscarYAutorizar(
@@ -413,9 +487,10 @@ public class AlojamientoService {
 
         if (!esAdministrador
                 && (usuarioId == null || !usuarioId.equals(alojamiento.getHostId()))) {
+
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "No tienes permiso para modificar esta publicaciÃ³n"
+                    "No tienes permiso para modificar esta publicación"
             );
         }
     }
@@ -424,13 +499,14 @@ public class AlojamientoService {
             Runnable operacion,
             String nombreOperacion
     ) {
+
         try {
             operacion.run();
         } catch (RestClientException exception) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "No se pudo completar la operaciÃ³n porque fallÃ³ "
-                            + "el registro de auditorÃ­a de " + nombreOperacion,
+                    "No se pudo completar la operación porque falló "
+                            + "el registro de auditoría de " + nombreOperacion,
                     exception
             );
         }
