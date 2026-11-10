@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.catalog.domain;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,9 @@ public class Alojamiento {
 
     @Column(name = "precio_noche", precision = 12, scale = 2)
     private BigDecimal precioNoche;
+
+    @Column(name = "tarifa_limpieza", nullable = false, precision = 12, scale = 2)
+    private BigDecimal tarifaLimpieza = BigDecimal.ZERO;
 
     private Integer capacidad;
 
@@ -67,6 +71,10 @@ public class Alojamiento {
     @Column(name = "imagen_url", nullable = false, length = 1000)
     private List<String> imagenes = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "id_alojamiento", nullable = false)
+    private List<ServicioAdicional> serviciosAdicionales = new ArrayList<>();
+
     protected Alojamiento() {
     }
 
@@ -86,6 +94,7 @@ public class Alojamiento {
         this.ciudad = ciudad;
         this.precioNoche = precioNoche;
         this.capacidad = capacidad;
+        this.tarifaLimpieza = BigDecimal.ZERO;
         this.estado = "BORRADOR";
     }
 
@@ -93,6 +102,7 @@ public class Alojamiento {
         this.hostId = hostId;
         this.titulo = titulo;
         this.estado = estado;
+        this.tarifaLimpieza = BigDecimal.ZERO;
     }
 
     public Long getId() {
@@ -121,6 +131,10 @@ public class Alojamiento {
 
     public BigDecimal getPrecioNoche() {
         return precioNoche;
+    }
+
+    public BigDecimal getTarifaLimpieza() {
+        return tarifaLimpieza;
     }
 
     public Integer getCapacidad() {
@@ -155,6 +169,10 @@ public class Alojamiento {
         return imagenes;
     }
 
+    public List<ServicioAdicional> getServiciosAdicionales() {
+        return serviciosAdicionales;
+    }
+
     public void actualizarDatosComplementarios(
             String tipoAlojamiento,
             String reglas,
@@ -174,6 +192,21 @@ public class Alojamiento {
         this.imagenes.clear();
         if (imagenes != null) {
             this.imagenes.addAll(imagenes);
+        }
+    }
+
+    public void actualizarTarifas(
+            BigDecimal tarifaLimpieza,
+            List<ServicioAdicional> serviciosAdicionales
+    ) {
+        this.tarifaLimpieza = tarifaLimpieza != null
+                ? tarifaLimpieza
+                : BigDecimal.ZERO;
+
+        this.serviciosAdicionales.clear();
+
+        if (serviciosAdicionales != null) {
+            this.serviciosAdicionales.addAll(serviciosAdicionales);
         }
     }
 
