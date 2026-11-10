@@ -6,5 +6,6 @@ public record CrearReservaRequest(
         Long userId,
         Long alojamientoId,
         LocalDate checkIn,
-        LocalDate checkOut) {
+        LocalDate checkOut,
+        String resultadoPago) {
 }

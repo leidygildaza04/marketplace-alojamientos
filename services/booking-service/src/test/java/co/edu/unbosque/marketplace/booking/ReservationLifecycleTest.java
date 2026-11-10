@@ -25,8 +25,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:booking_lifecycle_test",
         "spring.datasource.driver-class-name=org.h2.Driver",
@@ -64,7 +62,8 @@ class ReservationLifecycleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
                                 + "\"checkIn\":\"2027-02-01\","
-                                + "\"checkOut\":\"2027-02-04\"}"))
+                                + "\"checkOut\":\"2027-02-04\","
+                                + "\"resultadoPago\":\"APROBADO\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
 
@@ -86,7 +85,8 @@ class ReservationLifecycleTest {
 
         String contenido = "{\"userId\":5,\"alojamientoId\":44,"
                 + "\"checkIn\":\"2027-02-01\","
-                + "\"checkOut\":\"2027-02-04\"}";
+                + "\"checkOut\":\"2027-02-04\","
+                + "\"resultadoPago\":\"APROBADO\"}";
 
         MvcResult primeraRespuesta = mockMvc.perform(post("/api/v1/reservas")
                         .header("Idempotency-Key", "reintento-001")
@@ -134,7 +134,8 @@ class ReservationLifecycleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
                                 + "\"checkIn\":\"2027-02-01\","
-                                + "\"checkOut\":\"2027-02-04\"}"))
+                                + "\"checkOut\":\"2027-02-04\","
+                                + "\"resultadoPago\":\"APROBADO\"}"))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/reservas")
@@ -142,7 +143,8 @@ class ReservationLifecycleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":99,"
                                 + "\"checkIn\":\"2027-03-01\","
-                                + "\"checkOut\":\"2027-03-04\"}"))
+                                + "\"checkOut\":\"2027-03-04\","
+                                + "\"resultadoPago\":\"APROBADO\"}"))
                 .andExpect(status().isConflict());
 
         verify(catalog, times(1)).reservar(
