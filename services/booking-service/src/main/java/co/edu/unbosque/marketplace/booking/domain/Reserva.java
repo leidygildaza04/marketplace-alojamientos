@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.booking.domain;
 
 import jakarta.persistence.Column;
@@ -6,10 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "reservas")
+@Table(name = "reservas", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_reserva_usuario_idempotencia",
+                columnNames = {"id_usuario", "clave_idempotencia"}
+        )
+})
 public class Reserva {
 
     @Id
@@ -32,9 +39,13 @@ public class Reserva {
     @Column(nullable = false)
     private String estado;
 
+    @Column(name = "clave_idempotencia", length = 100)
+    private String claveIdempotencia;
+
     protected Reserva() {
     }
 
+    // Constructor original para conservar compatibilidad.
     public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
             LocalDate checkOut, String estado) {
         this.userId = userId;
@@ -44,12 +55,44 @@ public class Reserva {
         this.estado = estado;
     }
 
-    public Long getId() { return id; }
-    public Long getUserId() { return userId; }
-    public Long getAlojamientoId() { return alojamientoId; }
-    public LocalDate getCheckIn() { return checkIn; }
-    public LocalDate getCheckOut() { return checkOut; }
-    public String getEstado() { return estado; }
+    // Constructor con clave de idempotencia.
+    public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
+            LocalDate checkOut, String estado, String claveIdempotencia) {
+        this.userId = userId;
+        this.alojamientoId = alojamientoId;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.estado = estado;
+        this.claveIdempotencia = claveIdempotencia;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getAlojamientoId() {
+        return alojamientoId;
+    }
+
+    public LocalDate getCheckIn() {
+        return checkIn;
+    }
+
+    public LocalDate getCheckOut() {
+        return checkOut;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public String getClaveIdempotencia() {
+        return claveIdempotencia;
+    }
 
     public void cambiarEstado(String estado) {
         this.estado = estado;

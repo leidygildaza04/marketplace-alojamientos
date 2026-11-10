@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.booking.web;
 
 import co.edu.unbosque.marketplace.booking.dto.CrearReservaRequest;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,12 +23,17 @@ public class ReservationLifecycleController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservaResponse> confirmar(@RequestBody CrearReservaRequest request) {
-        return ResponseEntity.status(201).body(reservas.confirmar(request));
+    public ResponseEntity<ReservaResponse> confirmar(
+            @RequestHeader("Idempotency-Key") String claveIdempotencia,
+            @RequestBody CrearReservaRequest request) {
+
+        return ResponseEntity.status(201)
+                .body(reservas.confirmar(request, claveIdempotencia));
     }
 
     @PostMapping("/{reservaId}/cancelar")
-    public ResponseEntity<ReservaResponse> cancelar(@PathVariable Long reservaId) {
+    public ResponseEntity<ReservaResponse> cancelar(
+            @PathVariable Long reservaId) {
         return ResponseEntity.ok(reservas.cancelar(reservaId));
     }
 }

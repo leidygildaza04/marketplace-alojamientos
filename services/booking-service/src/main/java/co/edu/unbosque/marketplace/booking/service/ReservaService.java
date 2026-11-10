@@ -1,8 +1,11 @@
+
 package co.edu.unbosque.marketplace.booking.service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Objects;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -42,18 +45,56 @@ public class ReservaService {
         this.transactions = new TransactionTemplate(transactionManager);
     }
 
-    public ReservaResponse confirmar(CrearReservaRequest request) {
+    public ReservaResponse confirmar(
+            CrearReservaRequest request,
+            String claveIdempotencia) {
+
         validar(request);
 
-        Reserva pendiente = transactions.execute(status -> reservas.save(
-                new Reserva(
-                        request.userId(),
-                        request.alojamientoId(),
-                        request.checkIn(),
-                        request.checkOut(),
-                        "PENDIENTE"
-                )
-        ));
+        if (claveIdempotencia == null
+                || claveIdempotencia.isBlank()
+                || claveIdempotencia.trim().length() > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La clave de idempotencia es obligatoria y debe tener máximo 100 caracteres"
+            );
+        }
+
+        String clave = claveIdempotencia.trim();
+
+        // Si la clave ya existe para el usuario, no se crea otra reserva.
+        var existente = reservas.findByUserIdAndClaveIdempotencia(
+                request.userId(), clave);
+
+        if (existente.isPresent()) {
+            return devolverReservaExistente(existente.get(), request);
+        }
+
+        Reserva pendiente;
+
+        try {
+            pendiente = transactions.execute(status -> reservas.save(
+                    new Reserva(
+                            request.userId(),
+                            request.alojamientoId(),
+                            request.checkIn(),
+                            request.checkOut(),
+                            "PENDIENTE",
+                            clave
+                    )
+            ));
+
+        } catch (DataIntegrityViolationException ex) {
+            // La restricción única evita duplicados ante solicitudes simultáneas.
+            var duplicada = reservas.findByUserIdAndClaveIdempotencia(
+                    request.userId(), clave);
+
+            if (duplicada.isPresent()) {
+                return devolverReservaExistente(duplicada.get(), request);
+            }
+
+            throw ex;
+        }
 
         if (pendiente == null || pendiente.getId() == null) {
             throw new ResponseStatusException(
@@ -120,7 +161,6 @@ public class ReservaService {
             if (liberado) {
                 cambiarEstado(pendiente.getId(), "RECHAZADA");
             } else {
-                // El periodo podría continuar reservado en Catalog.
                 cambiarEstado(
                         pendiente.getId(),
                         "COMPENSACION_PENDIENTE"
@@ -134,6 +174,25 @@ public class ReservaService {
                     ex
             );
         }
+    }
+
+    private ReservaResponse devolverReservaExistente(
+            Reserva existente,
+            CrearReservaRequest request) {
+
+        boolean mismosDatos =
+                Objects.equals(existente.getAlojamientoId(), request.alojamientoId())
+                && Objects.equals(existente.getCheckIn(), request.checkIn())
+                && Objects.equals(existente.getCheckOut(), request.checkOut());
+
+        if (!mismosDatos) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La clave de idempotencia ya fue utilizada con otros datos"
+            );
+        }
+
+        return ReservaResponse.desde(existente);
     }
 
     public ReservaResponse cancelar(Long reservaId) {
@@ -165,11 +224,9 @@ public class ReservaService {
         }
 
         try {
-            // Libera únicamente el periodo asociado a esta reserva.
             catalog.liberar(datos.getAlojamientoId(), datos.getId());
 
         } catch (RestClientException ex) {
-            // Se conserva CANCELACION_PENDIENTE para permitir un nuevo intento.
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "La cancelación quedó pendiente porque no se pudo liberar el periodo",
