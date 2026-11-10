@@ -1,8 +1,10 @@
+
 package co.edu.unbosque.marketplace.booking.repository;
 
 import co.edu.unbosque.marketplace.booking.domain.Reserva;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
@@ -15,4 +17,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByAlojamientoIdAndEstadoAndCheckOutGreaterThanEqual(
             Long alojamientoId, String estado, LocalDate fecha);
+
+    Optional<Reserva> findByUserIdAndClaveIdempotencia(
+            Long userId, String claveIdempotencia);
 }

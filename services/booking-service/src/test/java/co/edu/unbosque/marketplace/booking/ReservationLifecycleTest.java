@@ -1,8 +1,10 @@
+
 package co.edu.unbosque.marketplace.booking;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.edu.unbosque.marketplace.booking.client.CatalogPeriodClient;
 import co.edu.unbosque.marketplace.booking.domain.Reserva;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:booking_lifecycle_test",
@@ -37,6 +44,9 @@ class ReservationLifecycleTest {
     @Autowired
     private ReservaRepository reservas;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
     private CatalogPeriodClient catalog;
 
@@ -50,6 +60,7 @@ class ReservationLifecycleTest {
                 eq(LocalDate.of(2027, 2, 4)));
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "confirmacion-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
                                 + "\"checkIn\":\"2027-02-01\","
@@ -58,6 +69,83 @@ class ReservationLifecycleTest {
                 .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
 
         verify(catalog).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
+    }
+
+    @Test
+    void devuelveLaReservaOriginalCuandoSeRepiteLaMismaClave() throws Exception {
+
+        doNothing().when(catalog).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
+
+        String contenido = "{\"userId\":5,\"alojamientoId\":44,"
+                + "\"checkIn\":\"2027-02-01\","
+                + "\"checkOut\":\"2027-02-04\"}";
+
+        MvcResult primeraRespuesta = mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "reintento-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(contenido))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode primeraReserva = objectMapper.readTree(
+                primeraRespuesta.getResponse().getContentAsString());
+
+        MvcResult segundaRespuesta = mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "reintento-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(contenido))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.estado").value("CONFIRMADA"))
+                .andReturn();
+
+        JsonNode segundaReserva = objectMapper.readTree(
+                segundaRespuesta.getResponse().getContentAsString());
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                primeraReserva.get("id").asLong(),
+                segundaReserva.get("id").asLong());
+
+        verify(catalog, times(1)).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
+    }
+
+    @Test
+    void rechazaLaMismaClaveConDatosDiferentes() throws Exception {
+
+        doNothing().when(catalog).reservar(
+                eq(44L),
+                any(Long.class),
+                eq(LocalDate.of(2027, 2, 1)),
+                eq(LocalDate.of(2027, 2, 4)));
+
+        mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "clave-conflicto-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":5,\"alojamientoId\":44,"
+                                + "\"checkIn\":\"2027-02-01\","
+                                + "\"checkOut\":\"2027-02-04\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/reservas")
+                        .header("Idempotency-Key", "clave-conflicto-001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":5,\"alojamientoId\":99,"
+                                + "\"checkIn\":\"2027-03-01\","
+                                + "\"checkOut\":\"2027-03-04\"}"))
+                .andExpect(status().isConflict());
+
+        verify(catalog, times(1)).reservar(
                 eq(44L),
                 any(Long.class),
                 eq(LocalDate.of(2027, 2, 1)),
