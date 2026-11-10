@@ -1,3 +1,4 @@
+
 import { Injectable } from '@angular/core';
 
 export interface Accommodation {
@@ -61,17 +62,53 @@ export interface GuestReservation {
 export class MarketplaceDataService {
   private readonly hiddenReviewsKey = 'estancia-hidden-reviews';
   private readonly reservationsKey = 'estancia-reservations';
+
   private readonly initialReservations: GuestReservation[] = [
-    { code: 'R-1024', property: 'Refugio entre montañas', city: 'Villa de Leyva', arrival: '2026-12-12', departure: '2026-12-15', total: 664000, status: 'CONFIRMADA', policy: 'Flexible' },
-    { code: 'R-0987', property: 'Apartamento con encanto', city: 'Bogotá', arrival: '2026-08-03', departure: '2026-08-05', total: 310000, status: 'COMPLETADA', policy: 'Moderada' },
-    { code: 'R-0950', property: 'Casa colonial con patio', city: 'Cartagena', arrival: '2026-10-10', departure: '2026-10-12', total: 720000, status: 'CANCELADA', policy: 'Flexible' },
+    {
+      code: 'R-1024',
+      property: 'Refugio entre montañas',
+      city: 'Villa de Leyva',
+      arrival: '2026-12-12',
+      departure: '2026-12-15',
+      total: 664000,
+      status: 'CONFIRMADA',
+      policy: 'Flexible',
+    },
+    {
+      code: 'R-0987',
+      property: 'Apartamento con encanto',
+      city: 'Bogotá',
+      arrival: '2026-08-03',
+      departure: '2026-08-05',
+      total: 310000,
+      status: 'COMPLETADA',
+      policy: 'Moderada',
+    },
+    {
+      code: 'R-0950',
+      property: 'Casa colonial con patio',
+      city: 'Cartagena',
+      arrival: '2026-10-10',
+      departure: '2026-10-12',
+      total: 720000,
+      status: 'CANCELADA',
+      policy: 'Flexible',
+    },
   ];
+
   readonly reviews: MarketplaceReview[] = [
-    { id: 'rev-01', property: 'Refugio entre montañas', author: 'Huésped', text: 'Un lugar tranquilo, cómodo y muy bien ubicado.' },
+    {
+      id: 'rev-01',
+      property: 'Refugio entre montañas',
+      author: 'Huésped',
+      text: 'Un lugar tranquilo, cómodo y muy bien ubicado.',
+    },
   ];
+
   readonly serviceFeeRate = 0.1;
-  readonly longStayDiscountRate = 0.1;
+  readonly longStayDiscountRate = 0;
   readonly longStayMinimumNights = 7;
+
   // Semillas ficticias para la interfaz. La API reemplazará esta fuente cuando esté disponible.
   readonly accommodations: Accommodation[] = [
     {
@@ -154,8 +191,10 @@ export class MarketplaceDataService {
 
   getActiveAccommodations(filters: AccommodationFilters = {}): Accommodation[] {
     const destination = filters.destination?.trim().toLocaleLowerCase() ?? '';
+
     return this.accommodations.filter((item) => {
       const searchable = `${item.title} ${item.city} ${item.country}`.toLocaleLowerCase();
+
       return item.status === 'ACTIVA'
         && (!destination || searchable.includes(destination))
         && (!filters.type || item.type === filters.type)
@@ -194,62 +233,113 @@ export class MarketplaceDataService {
 
   getReservations(): GuestReservation[] {
     if (typeof localStorage === 'undefined') return [...this.initialReservations];
+
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(this.reservationsKey) ?? 'null');
+
       if (Array.isArray(stored)) return stored as GuestReservation[];
-    } catch { /* Recupera los datos iniciales si el almacenamiento local no es válido. */ }
+    } catch {
+      // Recupera los datos iniciales si el almacenamiento local no es válido.
+    }
+
     this.saveReservations(this.initialReservations);
     return [...this.initialReservations];
   }
 
   createReservation(reservation: Omit<GuestReservation, 'code' | 'status'>): GuestReservation {
-    const created: GuestReservation = { ...reservation, code: `R-${Date.now().toString().slice(-6)}`, status: 'CONFIRMADA' };
+    const created: GuestReservation = {
+      ...reservation,
+      code: `R-${Date.now().toString().slice(-6)}`,
+      status: 'CONFIRMADA',
+    };
+
     const reservations = this.getReservations();
     reservations.unshift(created);
     this.saveReservations(reservations);
+
     return created;
   }
 
   cancelReservation(code: string): void {
-    const reservations = this.getReservations().map((reservation) => reservation.code === code ? { ...reservation, status: 'CANCELADA' as const } : reservation);
+    const reservations = this.getReservations().map((reservation) =>
+      reservation.code === code
+        ? { ...reservation, status: 'CANCELADA' as const }
+        : reservation,
+    );
+
     this.saveReservations(reservations);
   }
 
   private saveReservations(reservations: GuestReservation[]): void {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(this.reservationsKey, JSON.stringify(reservations));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this.reservationsKey, JSON.stringify(reservations));
+    }
   }
 
   private getHiddenReviewIds(): Set<string> {
     if (typeof localStorage === 'undefined') return new Set();
+
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(this.hiddenReviewsKey) ?? '[]');
-      return new Set(Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : []);
+
+      return new Set(
+        Array.isArray(stored)
+          ? stored.filter((id): id is string => typeof id === 'string')
+          : [],
+      );
     } catch {
       return new Set();
     }
   }
 
   private saveHiddenReviewIds(ids: Set<string>): void {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(this.hiddenReviewsKey, JSON.stringify([...ids]));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this.hiddenReviewsKey, JSON.stringify([...ids]));
+    }
   }
 
-  calculateQuote(item: Accommodation, arrival: string, departure: string, breakfast = false): Quote | null {
-    const nights = Math.round((Date.parse(`${departure}T00:00:00Z`) - Date.parse(`${arrival}T00:00:00Z`)) / 86_400_000);
-    if (!Number.isFinite(nights) || nights <= 0) return null;
+  calculateQuote(
+    item: Accommodation,
+    arrival: string,
+    departure: string,
+    _breakfast = false,
+  ): Quote | null {
+    const arrivalDate = Date.parse(`${arrival}T00:00:00Z`);
+    const departureDate = Date.parse(`${departure}T00:00:00Z`);
+
+    const nights = Math.round(
+      (departureDate - arrivalDate) / 86_400_000,
+    );
+
+    if (
+      !Number.isFinite(arrivalDate)
+      || !Number.isFinite(departureDate)
+      || !Number.isFinite(nights)
+      || nights <= 0
+    ) {
+      return null;
+    }
+
     const nightlySubtotal = item.pricePerNight * nights;
-    const serviceFee = Math.round(nightlySubtotal * this.serviceFeeRate);
-    const longStayDiscount = nights >= this.longStayMinimumNights
-      ? Math.round(nightlySubtotal * this.longStayDiscountRate)
-      : 0;
-    const extras = breakfast ? 30000 : 0;
+    const cleaningFee = item.cleaningFee;
+    const extras = 0;
+
+    const subtotal = nightlySubtotal + cleaningFee + extras;
+
+    const serviceFee = Math.round(
+      subtotal * this.serviceFeeRate * 100,
+    ) / 100;
+
+    const longStayDiscount = 0;
+
     return {
       nights,
       nightlySubtotal,
-      cleaningFee: item.cleaningFee,
+      cleaningFee,
       serviceFee,
       longStayDiscount,
       extras,
-      total: nightlySubtotal + item.cleaningFee + serviceFee + extras - longStayDiscount,
+      total: subtotal + serviceFee - longStayDiscount,
     };
   }
 }
