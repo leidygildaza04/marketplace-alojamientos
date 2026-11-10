@@ -34,15 +34,18 @@ public class ReservaService {
     private final ReservaRepository reservas;
     private final CatalogPeriodClient catalog;
     private final TransactionTemplate transactions;
+    private final PagoSimuladoService pagoSimulado;
 
     public ReservaService(
             ReservaRepository reservas,
             CatalogPeriodClient catalog,
-            PlatformTransactionManager transactionManager
+            PlatformTransactionManager transactionManager,
+            PagoSimuladoService pagoSimulado
     ) {
         this.reservas = reservas;
         this.catalog = catalog;
         this.transactions = new TransactionTemplate(transactionManager);
+        this.pagoSimulado = pagoSimulado;
     }
 
     public ReservaResponse confirmar(
@@ -103,6 +106,7 @@ public class ReservaService {
             );
         }
 
+        // Primero se bloquea el periodo en Catalog.
         try {
             catalog.reservar(
                     pendiente.getAlojamientoId(),
@@ -130,6 +134,41 @@ public class ReservaService {
             );
         }
 
+        // Después del bloqueo se procesa el pago simulado.
+        boolean pagoAprobado = pagoSimulado.procesarPago(
+                request.resultadoPago()
+        );
+
+        if (!pagoAprobado) {
+            try {
+                // Si el pago se rechaza, se libera el periodo reservado.
+                catalog.liberar(
+                        pendiente.getAlojamientoId(),
+                        pendiente.getId()
+                );
+
+                cambiarEstado(pendiente.getId(), "RECHAZADA");
+
+            } catch (RestClientException ex) {
+                cambiarEstado(
+                        pendiente.getId(),
+                        "COMPENSACION_PENDIENTE"
+                );
+
+                throw new ResponseStatusException(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "El pago fue rechazado, pero no fue posible liberar el periodo",
+                        ex
+                );
+            }
+
+            throw new ResponseStatusException(
+                    HttpStatus.PAYMENT_REQUIRED,
+                    "El pago fue rechazado. La reserva no fue confirmada"
+            );
+        }
+
+        // Si el pago es aprobado, continúa la confirmación existente.
         try {
             Reserva confirmada = transactions.execute(status -> {
                 Reserva actual = reservas.findById(pendiente.getId())
@@ -297,6 +336,14 @@ public class ReservaService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "La fecha de entrada debe ser anterior a la fecha de salida"
+            );
+        }
+
+        if (!"APROBADO".equals(request.resultadoPago())
+                && !"RECHAZADO".equals(request.resultadoPago())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El resultado del pago debe ser APROBADO o RECHAZADO"
             );
         }
     }
