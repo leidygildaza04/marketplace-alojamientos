@@ -15,9 +15,20 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.unbosque.marketplace.booking.client.CatalogPeriodClient;
+import co.edu.unbosque.marketplace.booking.client.CatalogListingsClient;
+import co.edu.unbosque.marketplace.booking.client.CatalogAccommodationClient;
+import co.edu.unbosque.marketplace.booking.client.CatalogListingsResponse;
+import co.edu.unbosque.marketplace.booking.client.CatalogAccommodationSummaryResponse;
+import co.edu.unbosque.marketplace.booking.dto.CrearCotizacionRequest;
+import co.edu.unbosque.marketplace.booking.dto.CotizacionResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import co.edu.unbosque.marketplace.booking.domain.Reserva;
 import co.edu.unbosque.marketplace.booking.dto.CrearReservaRequest;
 import co.edu.unbosque.marketplace.booking.dto.ReservaResponse;
+import co.edu.unbosque.marketplace.booking.dto.ReservaHistorialResponse;
+import co.edu.unbosque.marketplace.booking.dto.ReservaDetalleResponse;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
 
 /**
@@ -33,19 +44,31 @@ public class ReservaService {
 
     private final ReservaRepository reservas;
     private final CatalogPeriodClient catalog;
+    private final CatalogListingsClient catalogListings;
+    private final CatalogAccommodationClient catalogAccommodation;
     private final TransactionTemplate transactions;
     private final PagoSimuladoService pagoSimulado;
+    private final CotizacionService cotizaciones;
+    private final ObjectMapper objectMapper;
 
     public ReservaService(
             ReservaRepository reservas,
             CatalogPeriodClient catalog,
+            CatalogListingsClient catalogListings,
+            CatalogAccommodationClient catalogAccommodation,
             PlatformTransactionManager transactionManager,
-            PagoSimuladoService pagoSimulado
+            PagoSimuladoService pagoSimulado,
+            CotizacionService cotizaciones,
+            ObjectMapper objectMapper
     ) {
         this.reservas = reservas;
         this.catalog = catalog;
+        this.catalogListings = catalogListings;
+        this.catalogAccommodation = catalogAccommodation;
         this.transactions = new TransactionTemplate(transactionManager);
         this.pagoSimulado = pagoSimulado;
+        this.cotizaciones = cotizaciones;
+        this.objectMapper = objectMapper;
     }
 
     public ReservaResponse confirmar(
@@ -73,19 +96,40 @@ public class ReservaService {
             return devolverReservaExistente(existente.get(), request);
         }
 
+        // Calcular y congelar los precios al crear la reserva.
+        CotizacionResponse cotizacion = cotizaciones.calcular(
+                new CrearCotizacionRequest(
+                        request.alojamientoId(),
+                        request.checkIn(),
+                        request.checkOut(),
+                        List.of()
+                )
+        );
+
+        final String cotizacionJson;
+        try {
+            cotizacionJson = objectMapper.writeValueAsString(cotizacion);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException(
+                    "No fue posible guardar la cotización de la reserva", ex);
+        }
+
         Reserva pendiente;
 
         try {
-            pendiente = transactions.execute(status -> reservas.save(
-                    new Reserva(
-                            request.userId(),
-                            request.alojamientoId(),
-                            request.checkIn(),
-                            request.checkOut(),
-                            "PENDIENTE",
-                            clave
-                    )
-            ));
+            pendiente = transactions.execute(status -> {
+                Reserva nueva = new Reserva(
+                        request.userId(),
+                        request.alojamientoId(),
+                        request.checkIn(),
+                        request.checkOut(),
+                        "PENDIENTE",
+                        clave
+                );
+
+                nueva.guardarCotizacion(cotizacion.total(), cotizacionJson);
+                return reservas.save(nueva);
+            });
 
         } catch (DataIntegrityViolationException ex) {
             // La restricción única evita duplicados ante solicitudes simultáneas.
@@ -232,6 +276,118 @@ public class ReservaService {
         }
 
         return ReservaResponse.desde(existente);
+    }
+
+    /**
+     * Consulta el historial completo de reservas de un huesped.
+     */
+    public List<ReservaHistorialResponse> historialHuesped(Long userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El identificador del huesped es obligatorio"
+            );
+        }
+
+        return reservas.findByUserIdOrderByCheckInDesc(userId)
+                .stream()
+                .map(this::construirHistorial)
+                .toList();
+    }
+
+    /**
+     * Consulta las reservas de los alojamientos pertenecientes al anfitrion.
+     */
+    public List<ReservaHistorialResponse> historialAnfitrion(Long hostId) {
+        if (hostId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El identificador del anfitrion es obligatorio"
+            );
+        }
+
+        CatalogListingsResponse respuesta =
+                catalogListings.consultarAlojamientos(hostId);
+
+        if (respuesta == null
+                || respuesta.accommodationIds() == null
+                || respuesta.accommodationIds().isEmpty()) {
+            return List.of();
+        }
+
+        return reservas.findByAlojamientoIdInOrderByCheckInDesc(
+                        respuesta.accommodationIds())
+                .stream()
+                .map(this::construirHistorial)
+                .toList();
+    }
+
+    /**
+     * Consulta el detalle de una reserva y recupera la cotizacion congelada.
+     */
+    public ReservaDetalleResponse detalle(Long reservaId) {
+        Reserva reserva = reservas.findById(reservaId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "La reserva no existe"
+                ));
+
+        CatalogAccommodationSummaryResponse alojamiento =
+                catalogAccommodation.consultarResumen(
+                        reserva.getAlojamientoId());
+
+        CotizacionResponse cotizacion = null;
+        String snapshot = reserva.getCotizacionSnapshot();
+
+        if (snapshot != null && !snapshot.isBlank()) {
+            try {
+                cotizacion = objectMapper.readValue(
+                        snapshot,
+                        CotizacionResponse.class
+                );
+            } catch (JsonProcessingException ex) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No fue posible recuperar la cotizacion guardada",
+                        ex
+                );
+            }
+        }
+
+        return new ReservaDetalleResponse(
+                reserva.getId(),
+                reserva.getUserId(),
+                reserva.getAlojamientoId(),
+                alojamiento.titulo(),
+                alojamiento.ciudad(),
+                alojamiento.direccion(),
+                reserva.getCheckIn(),
+                reserva.getCheckOut(),
+                reserva.getEstado(),
+                reserva.getTotal(),
+                cotizacion
+        );
+    }
+
+    /**
+     * Construye los datos resumidos de una reserva.
+     */
+    private ReservaHistorialResponse construirHistorial(Reserva reserva) {
+        CatalogAccommodationSummaryResponse alojamiento =
+                catalogAccommodation.consultarResumen(
+                        reserva.getAlojamientoId());
+
+        return new ReservaHistorialResponse(
+                reserva.getId(),
+                reserva.getUserId(),
+                reserva.getAlojamientoId(),
+                alojamiento.titulo(),
+                alojamiento.ciudad(),
+                reserva.getCheckIn(),
+                reserva.getCheckOut(),
+                reserva.getTotal(),
+                reserva.getEstado()
+        );
     }
 
     public ReservaResponse cancelar(Long reservaId) {
