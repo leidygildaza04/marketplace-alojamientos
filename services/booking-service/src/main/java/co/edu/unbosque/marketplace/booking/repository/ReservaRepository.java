@@ -20,4 +20,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     Optional<Reserva> findByUserIdAndClaveIdempotencia(
             Long userId, String claveIdempotencia);
+
+    List<Reserva> findByUserIdOrderByCheckInDesc(Long userId);
+
+    List<Reserva> findByAlojamientoIdInOrderByCheckInDesc(List<Long> alojamientoIds);
 }

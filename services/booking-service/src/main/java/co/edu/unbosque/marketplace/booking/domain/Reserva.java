@@ -1,4 +1,3 @@
-
 package co.edu.unbosque.marketplace.booking.domain;
 
 import jakarta.persistence.Column;
@@ -8,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -41,6 +41,12 @@ public class Reserva {
 
     @Column(name = "clave_idempotencia", length = 100)
     private String claveIdempotencia;
+
+    @Column(name = "total", precision = 12, scale = 2)
+    private BigDecimal total;
+
+    @Column(name = "cotizacion_snapshot", columnDefinition = "TEXT")
+    private String cotizacionSnapshot;
 
     protected Reserva() {
     }
@@ -92,6 +98,21 @@ public class Reserva {
 
     public String getClaveIdempotencia() {
         return claveIdempotencia;
+    }
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public String getCotizacionSnapshot() {
+        return cotizacionSnapshot;
+    }
+
+    public void guardarCotizacion(
+            BigDecimal total,
+            String cotizacionSnapshot) {
+        this.total = total;
+        this.cotizacionSnapshot = cotizacionSnapshot;
     }
 
     public void cambiarEstado(String estado) {

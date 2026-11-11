@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.repository;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
@@ -15,6 +16,8 @@ public interface AlojamientoRepository extends
         JpaSpecificationExecutor<Alojamiento> {
 
     List<Alojamiento> findByHostIdAndEstado(Long hostId, String estado);
+
+    List<Alojamiento> findByHostId(Long hostId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Alojamiento a WHERE a.id = :id")

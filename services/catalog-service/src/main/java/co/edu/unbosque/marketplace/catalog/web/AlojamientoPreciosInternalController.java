@@ -2,6 +2,7 @@ package co.edu.unbosque.marketplace.catalog.web;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.dto.AlojamientoPreciosResponse;
+import co.edu.unbosque.marketplace.catalog.dto.AlojamientoResumenResponse;
 import co.edu.unbosque.marketplace.catalog.dto.ServicioAdicionalPrecioResponse;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
 import java.util.List;
@@ -54,5 +55,22 @@ public class AlojamientoPreciosInternalController {
                 alojamiento.getPrecioNoche(),
                 alojamiento.getTarifaLimpieza(),
                 servicios);
+    }
+
+    @GetMapping("/{alojamientoId}/resumen")
+    @Transactional(readOnly = true)
+    public AlojamientoResumenResponse consultarResumen(
+            @PathVariable Long alojamientoId) {
+
+        Alojamiento alojamiento = alojamientos.findById(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "El alojamiento no existe"));
+
+        return new AlojamientoResumenResponse(
+                alojamiento.getId(),
+                alojamiento.getTitulo(),
+                alojamiento.getCiudad(),
+                alojamiento.getDireccion());
     }
 }
