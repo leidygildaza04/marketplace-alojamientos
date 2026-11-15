@@ -85,9 +85,8 @@ export class Home {
   }
 
   get alojamientosComparados(): Accommodation[] {
-    return this.alojamientos.filter((item) =>
-      item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
-    );
+    // Los alojamientos no activos se conservan: la tabla los marca como «No disponible».
+    return this.alojamientos.filter((item) => this.seleccionComparacion.has(item.id));
   }
 
   buscar(): void {
