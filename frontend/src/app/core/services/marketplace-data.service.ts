@@ -36,7 +36,15 @@ export interface Quote {
   cleaningFee: number;
   serviceFee: number;
   longStayDiscount: number;
+  extras: number;
   total: number;
+}
+
+export interface MarketplaceReview {
+  id: string;
+  property: string;
+  author: string;
+  text: string;
 }
 
 export interface GuestReservation {

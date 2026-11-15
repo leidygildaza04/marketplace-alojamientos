@@ -2,8 +2,8 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Accommodation, Quote } from '../../../../core/services/marketplace-data.service';
-import { AccommodationReviews, MarketplaceApiService } from '../../../../core/services/marketplace-api.service';
+import { Accommodation } from '../../../../core/services/marketplace-data.service';
+import { AccommodationReviews, MarketplaceApiService, QuoteRecord } from '../../../../core/services/marketplace-api.service';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
 
 @Component({
@@ -25,7 +25,7 @@ export class AccommodationDetail {
   imagenNoDisponible = false;
   llegada = '';
   salida = '';
-  cotizacion: Quote | null = null;
+  cotizacion: QuoteRecord | null = null;
   error = '';
   avisoReserva = '';
   titular = '';

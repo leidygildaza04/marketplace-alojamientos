@@ -85,30 +85,8 @@ export class Home {
   }
 
   get alojamientosComparados(): Accommodation[] {
-    return this.alojamientos.filter(
-      (item) => item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
-    const resultados = this.marketplace.getActiveAccommodations({
-      destination: this.destino,
-      type: this.tipo || undefined,
-      guests: this.huespedes,
-      minPrice: this.precioMinimo,
-      maxPrice: this.precioMaximo,
-      amenities: [
-        this.serviciosSeleccionados.wifi && 'Wi-Fi',
-        this.serviciosSeleccionados.cocina && 'Cocina equipada',
-        this.serviciosSeleccionados.parqueadero && 'Parqueadero',
-        this.serviciosSeleccionados.piscina && 'Piscina',
-      ].filter((amenity): amenity is string => Boolean(amenity)),
-    });
-
-    return this.soloFavoritos
-      ? resultados.filter((item) => item.favorite)
-      : resultados;
-  }
-
-  get alojamientosComparados(): Accommodation[] {
-    return this.marketplace.accommodations.filter(
-      (item) => this.seleccionComparacion.has(item.id),
+    return this.alojamientos.filter((item) =>
+      item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
     );
   }
 
