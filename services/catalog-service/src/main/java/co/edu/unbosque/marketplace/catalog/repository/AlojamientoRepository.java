@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 public interface AlojamientoRepository extends JpaRepository<Alojamiento, Long> {
 
     List<Alojamiento> findByHostIdAndEstado(Long hostId, String estado);
+    List<Alojamiento> findByEstado(String estado);
+    List<Alojamiento> findByHostId(Long hostId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Alojamiento a WHERE a.id = :id")

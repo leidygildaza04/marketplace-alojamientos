@@ -48,7 +48,7 @@ flowchart TB
     gateway["API REST<br/>Endpoints de los servicios Spring Boot"]
 
     subgraph backend["Backend — Java 21 / Spring Boot 3.4"]
-      identity["identity-service :8081<br/>Identidad y perfil"]
+      identity["identity-service :8085<br/>Identidad y perfil"]
       catalog["catalog-service :8082<br/>Alojamientos, búsqueda y disponibilidad"]
       booking["booking-service :8083<br/>Cotización, reservas, cancelaciones y notificaciones"]
       backoffice["backoffice-service :8084<br/>Reseñas, administración, auditoría y reportes"]

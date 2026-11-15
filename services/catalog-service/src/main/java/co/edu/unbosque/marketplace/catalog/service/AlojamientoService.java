@@ -36,6 +36,31 @@ public class AlojamientoService {
         this.notificationClient = notificationClient;
     }
 
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarPublicados() {
+        return repository.findByEstado("ACTIVA");
+    }
+
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarDelAnfitrion(Long hostId) {
+        return repository.findByHostId(hostId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarTodos() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Alojamiento buscarPublicado(Long alojamientoId) {
+        Alojamiento alojamiento = repository.findById(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Alojamiento no encontrado"));
+        if (!"ACTIVA".equals(alojamiento.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alojamiento no encontrado");
+        }
+        return alojamiento;
+    }
+
     @Transactional
     public Alojamiento crear(Long hostId, CrearAlojamientoRequest request) {
 
@@ -48,6 +73,7 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
+        actualizarDatosExtra(alojamiento, request);
 
         return repository.save(alojamiento);
     }
@@ -129,6 +155,7 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
+        actualizarDatosExtra(alojamiento, request);
 
         Alojamiento alojamientoGuardado =
                 repository.saveAndFlush(alojamiento);
@@ -282,6 +309,15 @@ public class AlojamientoService {
                             + "el registro de auditoría de " + nombreOperacion,
                     exception
             );
+        }
+    }
+
+    private void actualizarDatosExtra(Alojamiento alojamiento, CrearAlojamientoRequest request) {
+        if (request.tipo() != null || request.imagen() != null || request.servicios() != null
+                || request.reglas() != null || request.cargoLimpieza() != null
+                || request.politicaCancelacion() != null) {
+            alojamiento.actualizarDatosExtra(request.tipo(), request.imagen(), request.servicios(),
+                    request.reglas(), request.cargoLimpieza(), request.politicaCancelacion());
         }
     }
 }

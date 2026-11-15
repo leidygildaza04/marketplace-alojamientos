@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
 import { ProfilePanel } from '../../../../core/components/profile-panel/profile-panel';
-import { Accommodation, MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
+import { Accommodation } from '../../../../core/services/marketplace-data.service';
+import { MarketplaceApiService } from '../../../../core/services/marketplace-api.service';
 
 @Component({
   selector: 'app-home',
@@ -14,8 +15,27 @@ import { Accommodation, MarketplaceDataService } from '../../../../core/services
   styleUrl: './home.css',
 })
 export class Home {
-  private readonly marketplace = inject(MarketplaceDataService);
+  private readonly api = inject(MarketplaceApiService);
   private readonly session = inject(AuthSessionService);
+  alojamientos: Accommodation[] = [];
+  cargandoAlojamientos = true;
+  errorAlojamientos = '';
+
+  constructor() {
+    this.api.getAccommodations().subscribe({
+      next: (items) => {
+        this.alojamientos = items;
+        this.cargandoAlojamientos = false;
+        items.forEach((item) => this.api.getAccommodationReviews(item.id).subscribe({
+          next: (summary) => {
+            this.alojamientos = this.alojamientos.map((current) => current.id === item.id
+              ? { ...current, rating: summary.calificacionPromedio } : current);
+          },
+        }));
+      },
+      error: () => { this.errorAlojamientos = 'No se pudieron cargar los alojamientos. Inténtalo nuevamente.'; this.cargandoAlojamientos = false; },
+    });
+  }
 
   get role() { return this.session.role; }
 
@@ -40,24 +60,22 @@ export class Home {
   readonly seleccionComparacion = new Set<string>();
 
   get alojamientosFiltrados(): Accommodation[] {
-    const resultados = this.marketplace.getActiveAccommodations({
-      destination: this.destino,
-      type: this.tipo || undefined,
-      guests: this.huespedes,
-      minPrice: this.precioMinimo,
-      maxPrice: this.precioMaximo,
-      amenities: [
-        this.serviciosSeleccionados.wifi && 'Wi-Fi',
-        this.serviciosSeleccionados.cocina && 'Cocina equipada',
-        this.serviciosSeleccionados.parqueadero && 'Parqueadero',
-        this.serviciosSeleccionados.piscina && 'Piscina',
-      ].filter((amenity): amenity is string => Boolean(amenity)),
-    });
+    const amenities = [this.serviciosSeleccionados.wifi && 'Wi-Fi', this.serviciosSeleccionados.cocina && 'Cocina equipada',
+      this.serviciosSeleccionados.parqueadero && 'Parqueadero', this.serviciosSeleccionados.piscina && 'Piscina']
+      .filter((amenity): amenity is string => Boolean(amenity));
+    const destination = this.destino.trim().toLocaleLowerCase();
+    const resultados = this.alojamientos.filter((item) => item.status === 'ACTIVA'
+      && (!destination || `${item.title} ${item.city}`.toLocaleLowerCase().includes(destination))
+      && (!this.tipo || item.type === this.tipo)
+      && item.capacity >= this.huespedes
+      && (this.precioMinimo == null || item.pricePerNight >= this.precioMinimo)
+      && (this.precioMaximo == null || item.pricePerNight <= this.precioMaximo)
+      && amenities.every((amenity) => item.amenities.includes(amenity)));
     return this.soloFavoritos ? resultados.filter((item) => item.favorite) : resultados;
   }
 
   get alojamientosComparados(): Accommodation[] {
-    return this.marketplace.accommodations.filter(
+    return this.alojamientos.filter(
       (item) => item.status === 'ACTIVA' && this.seleccionComparacion.has(item.id),
     );
   }

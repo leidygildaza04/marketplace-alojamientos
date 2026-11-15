@@ -1,0 +1,2 @@
+ALTER TABLE pagos
+    MODIFY COLUMN ultimos_cuatro VARCHAR(4) NOT NULL;

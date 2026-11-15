@@ -5,10 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthSessionService } from '../../../../core/services/auth-session.service';
 import { ProfilePanel } from '../../../../core/components/profile-panel/profile-panel';
-import {
-  Accommodation,
-  MarketplaceDataService,
-} from '../../../../core/services/marketplace-data.service';
+import { Accommodation } from '../../../../core/services/marketplace-data.service';
+import { CatalogAccommodation, MarketplaceApiService } from '../../../../core/services/marketplace-api.service';
 
 interface AvailabilityPeriod {
   propertyId: string;
@@ -26,10 +24,10 @@ interface AvailabilityPeriod {
   styleUrl: './host-dashboard.css',
 })
 export class HostDashboard {
-  private readonly marketplace = inject(MarketplaceDataService);
+  private readonly api = inject(MarketplaceApiService);
   private readonly session = inject(AuthSessionService);
 
-  readonly listings = this.marketplace.accommodations;
+  listings: Accommodation[] = [];
 
   mostrarFormulario = false;
   aviso = '';
@@ -50,9 +48,28 @@ export class HostDashboard {
   periodStart = '';
   periodEnd = '';
 
-  selectedListingId = this.marketplace.accommodations[0]?.id ?? '';
+  selectedListingId = '';
 
   readonly periods: AvailabilityPeriod[] = [];
+
+  constructor() {
+    this.api.getMyAccommodations().subscribe({
+      next: (items) => {
+        this.listings = items.map((item) => this.api.toAccommodation(item));
+        this.selectedListingId = this.listings[0]?.id ?? '';
+        this.listings.forEach((listing) => this.api.getAvailability(Number(listing.id)).subscribe({
+          next: (periods) => {
+            this.periods.push(...periods.map((period) => ({
+              propertyId: String(period.alojamientoId), propertyTitle: listing.title,
+              start: period.fechaInicio, end: period.fechaFin, status: period.estado === 'RESERVADO' ? 'RESERVADO' as const : 'DISPONIBLE' as const,
+            })));
+            this.periods.sort((a, b) => a.start.localeCompare(b.start));
+          },
+        }));
+      },
+      error: () => { this.error = 'No se pudieron cargar tus publicaciones.'; },
+    });
+  }
 
   cerrarSesion(): void {
     this.session.signOut();
@@ -117,83 +134,47 @@ export class HostDashboard {
       return;
     }
 
-    // Validar imagen
-    if (!this.draft.image.trim()) {
-      this.error = 'La imagen del alojamiento es obligatoria.';
-      return;
-    }
-
-    // Validar servicios
     const amenities = this.draft.amenities
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
 
-    if (amenities.length === 0) {
-      this.error = 'Debes ingresar al menos un servicio.';
-      return;
-    }
-
-    // Validar reglas
     const rules = this.draft.rules
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
 
-    if (rules.length === 0) {
-      this.error = 'Debes ingresar al menos una regla.';
-      return;
-    }
+    this.api.createAccommodation({
+      titulo: this.draft.title.trim(),
+      descripcion: this.draft.description.trim(),
+      direccion: this.draft.city.trim(),
+      ciudad: this.draft.city.trim(),
+      precioNoche: this.draft.pricePerNight,
+      capacidad: this.draft.capacity,
+      tipo: this.draft.type,
+      imagen: this.draft.image.trim(),
+      servicios: JSON.stringify(amenities),
+      reglas: JSON.stringify(rules),
+      cargoLimpieza: 0,
+      politicaCancelacion: 'Flexible',
+    }).subscribe({
+      next: (created) => {
+        const item = this.api.toAccommodation(created);
+        this.listings = [...this.listings, item];
+        this.selectedListingId = item.id;
+        this.mostrarFormulario = false;
+        this.aviso = 'Borrador guardado correctamente.';
+        this.resetDraft();
+      },
+      error: () => { this.error = 'No se pudo guardar la publicación. Revisa la conexión y los datos.'; },
+    });
 
-    // Crear publicación como borrador
-    const item: Accommodation = {
-      id: `alojamiento-${Date.now()}`,
-      title: this.draft.title.trim(),
-      city: this.draft.city.trim(),
-      country: 'Colombia',
-      type: this.draft.type,
-      capacity: this.draft.capacity,
-      pricePerNight: this.draft.pricePerNight,
-      cleaningFee: 0,
-      rating: 0,
-      image: this.draft.image.trim(),
-      description: this.draft.description.trim(),
-      amenities,
-      rules,
-      cancellationPolicy: 'Flexible',
-      status: 'BORRADOR',
-      host: 'Anfitrión Travesía',
-      favorite: false,
-    };
-
-    this.marketplace.accommodations.push(item);
-
-    // Limpiar formulario
-    this.draft = {
-      title: '',
-      city: '',
-      type: 'Apartamento',
-      capacity: 1,
-      pricePerNight: 0,
-      description: '',
-      image: '',
-      amenities: '',
-      rules: '',
-    };
-
-    this.mostrarFormulario = false;
-    this.aviso = 'Borrador guardado correctamente.';
   }
 
   cambiarEstado(item: Accommodation): void {
-    if (item.status === 'ACTIVA') {
-      item.status = 'PAUSADA';
-    } else if (item.status === 'BORRADOR') {
+    if (item.status === 'BORRADOR') {
       const missing = [
         !item.description.trim() && 'descripción',
-        !item.image.trim() && 'imagen',
-        !item.amenities.length && 'servicios',
-        !item.rules.length && 'reglas',
       ].filter(Boolean);
 
       if (missing.length) {
@@ -204,13 +185,23 @@ export class HostDashboard {
         return;
       }
 
-      item.status = 'ACTIVA';
-    } else if (item.status === 'PAUSADA') {
-      item.status = 'ACTIVA';
     }
-
     this.error = '';
-    this.aviso = `Estado actualizado: ${item.title} · ${item.status}.`;
+    const operation = item.status === 'ACTIVA'
+      ? this.api.pauseAccommodation(Number(item.id))
+      : this.api.activateAccommodation(Number(item.id));
+    operation.subscribe({
+      next: (updated: CatalogAccommodation) => {
+        const mapped = this.api.toAccommodation(updated);
+        this.listings = this.listings.map((current) => current.id === item.id ? { ...current, ...mapped } : current);
+        this.aviso = `Estado actualizado: ${item.title} · ${mapped.status}.`;
+      },
+      error: () => { this.error = 'No se pudo cambiar el estado de la publicación.'; },
+    });
+  }
+
+  private resetDraft(): void {
+    this.draft = { title: '', city: '', type: 'Apartamento', capacity: 1, pricePerNight: 0, description: '', image: '', amenities: '', rules: '' };
   }
 
   agregarPeriodo(): void {
@@ -246,19 +237,15 @@ export class HostDashboard {
       return;
     }
 
-    this.periods.push({
-      propertyId: listing.id,
-      propertyTitle: listing.title,
-      start: this.periodStart,
-      end: this.periodEnd,
-      status: 'DISPONIBLE',
+    this.api.addAvailability(Number(listing.id), this.periodStart, this.periodEnd).subscribe({
+      next: () => {
+        this.periods.push({ propertyId: listing.id, propertyTitle: listing.title, start: this.periodStart, end: this.periodEnd, status: 'DISPONIBLE' });
+        this.periods.sort((a, b) => a.start.localeCompare(b.start));
+        this.periodStart = '';
+        this.periodEnd = '';
+        this.aviso = 'Periodo agregado al calendario.';
+      },
+      error: () => { this.error = 'No se pudo guardar el periodo. Verifica que no se superponga con otro.'; },
     });
-
-    this.periods.sort((a, b) => a.start.localeCompare(b.start));
-
-    this.periodStart = '';
-    this.periodEnd = '';
-
-    this.aviso = 'Periodo agregado al calendario.';
   }
 }

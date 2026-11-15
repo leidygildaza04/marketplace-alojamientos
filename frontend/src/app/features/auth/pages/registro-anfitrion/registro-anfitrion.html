@@ -59,7 +59,7 @@
     </div>
 
     @if (error) { <p class="form-message" role="alert">{{ error }}</p> }
-    <button class="submit-button" type="submit">Crear cuenta de anfitrión</button>
+    <button class="submit-button" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Creando cuenta…' : 'Crear cuenta de anfitrión' }}</button>
     <p class="host-prompt">¿Solo quieres alojarte? <a routerLink="/registro">Crear cuenta de viajero</a></p>
     <p class="form-footer">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
   </form>

@@ -34,6 +34,24 @@ public class Alojamiento {
 
     private Integer capacidad;
 
+    @Column(name = "tipo", length = 60, nullable = false)
+    private String tipo;
+
+    @Column(name = "imagen_url", length = 1024)
+    private String imagen;
+
+    @Column(columnDefinition = "TEXT")
+    private String servicios;
+
+    @Column(columnDefinition = "TEXT")
+    private String reglas;
+
+    @Column(name = "tarifa_aseo", precision = 12, scale = 2, nullable = false)
+    private BigDecimal cargoLimpieza = BigDecimal.ZERO;
+
+    @Column(name = "politica_cancelacion", length = 30, nullable = false)
+    private String politicaCancelacion = "Flexible";
+
     @Column(name = "estado_publicacion", nullable = false, length = 30)
     private String estado;
 
@@ -100,6 +118,13 @@ public class Alojamiento {
         return capacidad;
     }
 
+    public String getTipo() { return tipo; }
+    public String getImagen() { return imagen; }
+    public String getServicios() { return servicios; }
+    public String getReglas() { return reglas; }
+    public BigDecimal getCargoLimpieza() { return cargoLimpieza; }
+    public String getPoliticaCancelacion() { return politicaCancelacion; }
+
     public String getEstado() {
         return estado;
     }
@@ -139,6 +164,17 @@ public class Alojamiento {
         this.ciudad = ciudad;
         this.precioNoche = precioNoche;
         this.capacidad = capacidad;
+    }
+
+    public void actualizarDatosExtra(String tipo, String imagen, String servicios, String reglas,
+            BigDecimal cargoLimpieza, String politicaCancelacion) {
+        this.tipo = tipo;
+        this.imagen = imagen;
+        this.servicios = servicios;
+        this.reglas = reglas;
+        this.cargoLimpieza = cargoLimpieza == null ? BigDecimal.ZERO : cargoLimpieza;
+        this.politicaCancelacion = politicaCancelacion == null || politicaCancelacion.isBlank()
+                ? "Flexible" : politicaCancelacion;
     }
 
     public void cambiarEstadoA(String nuevoEstado) {

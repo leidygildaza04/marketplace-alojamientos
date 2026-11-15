@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:catalog_crud_test",
@@ -34,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 })
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser(username = "100", roles = "HOST")
 class PeriodoDisponibilidadCrudTest {
 
     @Autowired private MockMvc mockMvc;
@@ -52,7 +55,7 @@ class PeriodoDisponibilidadCrudTest {
         String ruta = "/api/v1/alojamientos/" + alojamientoId + "/periodos-disponibilidad";
         String cuerpoInicial = "{\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-05\"}";
 
-        String respuesta = mockMvc.perform(post(ruta)
+        String respuesta = mockMvc.perform(post(ruta).with(user("100").roles("HOST"))
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpoInicial))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.alojamientoId").value(alojamientoId))
@@ -62,27 +65,27 @@ class PeriodoDisponibilidadCrudTest {
         long periodoId = com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
                 .readTree(respuesta).get("id").asLong();
 
-        mockMvc.perform(get(ruta))
+        mockMvc.perform(get(ruta).with(user("100").roles("HOST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(periodoId));
 
-        mockMvc.perform(put(ruta + "/" + periodoId)
+        mockMvc.perform(put(ruta + "/" + periodoId).with(user("100").roles("HOST"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fechaInicio\":\"2026-12-10\",\"fechaFin\":\"2026-12-15\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fechaInicio").value("2026-12-10"));
 
-        mockMvc.perform(delete(ruta + "/" + periodoId))
+        mockMvc.perform(delete(ruta + "/" + periodoId).with(user("100").roles("HOST")))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get(ruta))
+        mockMvc.perform(get(ruta).with(user("100").roles("HOST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
     void devuelve404CuandoElAlojamientoNoExiste() throws Exception {
-        mockMvc.perform(get("/api/v1/alojamientos/999999/periodos-disponibilidad"))
+        mockMvc.perform(get("/api/v1/alojamientos/999999/periodos-disponibilidad").with(user("100").roles("HOST")))
                 .andExpect(status().isNotFound());
     }
 

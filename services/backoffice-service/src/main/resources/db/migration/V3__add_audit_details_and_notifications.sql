@@ -1,4 +1,8 @@
-﻿CREATE TABLE notificaciones (
+ALTER TABLE audit_events
+    ADD COLUMN id_entidad BIGINT NOT NULL DEFAULT 0,
+    ADD COLUMN detalle TEXT NULL;
+
+CREATE TABLE notificaciones (
     id BIGINT NOT NULL AUTO_INCREMENT,
     usuario_id BIGINT NOT NULL,
     titulo VARCHAR(160) NOT NULL,

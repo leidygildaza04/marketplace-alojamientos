@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +51,7 @@ class ReservationLifecycleTest {
                 eq(LocalDate.of(2027, 2, 4)));
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
                                 + "\"checkIn\":\"2027-02-01\","
@@ -77,7 +79,7 @@ class ReservationLifecycleTest {
         doNothing().when(catalog).liberar(44L, reserva.getId());
 
         mockMvc.perform(post(
-                        "/api/v1/reservas/" + reserva.getId() + "/cancelar"))
+                        "/api/v1/reservas/" + reserva.getId() + "/cancelar").with(user("5").roles("GUEST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("CANCELADA"));
 

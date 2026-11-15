@@ -195,7 +195,11 @@
     </div>
     @if (errorComparacion) { <p class="form-message form-error" role="alert">{{ errorComparacion }}</p> }
 
-    @if (alojamientosFiltrados.length > 0) {
+    @if (cargandoAlojamientos) {
+      <p class="form-message" role="status">Cargando alojamientos…</p>
+    } @else if (errorAlojamientos) {
+      <p class="form-message form-error" role="alert">{{ errorAlojamientos }}</p>
+    } @else if (alojamientosFiltrados.length > 0) {
       <div class="accommodation-grid">
         @for (alojamiento of alojamientosFiltrados; track alojamiento.id) {
           <article class="accommodation-card">
@@ -253,7 +257,7 @@
                 {{ seleccionComparacion.has(alojamiento.id) ? '✓ En comparación' : '＋ Comparar' }}
               </button>
 
-              <a class="details-button" [routerLink]="['/alojamiento', alojamiento.id]">
+              <a class="details-button" [routerLink]="['/alojamiento', alojamiento.id]" [queryParams]="llegada && salida ? { llegada, salida } : null">
                 Ver alojamiento
               </a>
             </div>

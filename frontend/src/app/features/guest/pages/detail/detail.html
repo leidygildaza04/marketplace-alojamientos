@@ -29,15 +29,21 @@
             <p><strong>Política de cancelación:</strong> {{ alojamiento.cancellationPolicy }}.</p>
             <p class="availability-note">Selecciona tus fechas para consultar disponibilidad.</p>
           </div>
+          <section class="guest-reviews" aria-labelledby="guest-reviews-title">
+            <h2 id="guest-reviews-title">Calificaciones de huéspedes</h2>
+            <p class="reviews-average">@if (resenas.cantidad) { ★ {{ resenas.calificacionPromedio }} · {{ resenas.cantidad }} calificación(es) } @else { Aún no hay calificaciones. }</p>
+            @for (resena of resenas.resenas; track resena.id) {
+              <article class="guest-review"><strong>★ {{ resena.calificacion }} / 5</strong><time>{{ resena.fechaCreacion | date:'d MMM y':'':'es-CO' }}</time>@if (resena.comentario) { <p>{{ resena.comentario }}</p> }</article>
+            }
+          </section>
         </section>
 
         <aside class="quote-card" aria-labelledby="quote-title">
           <h2 id="quote-title">Cotiza tu estancia</h2>
           <p class="price-hint"><strong>{{ alojamiento.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong> por noche</p>
           <form (ngSubmit)="cotizar()">
-            <label for="arrival">Llegada</label><input id="arrival" type="date" name="arrival" [(ngModel)]="llegada" [min]="fechaMinima" />
-            <label for="departure">Salida</label><input id="departure" type="date" name="departure" [(ngModel)]="salida" [min]="llegada || fechaMinima" />
-            <label class="extra-option"><input type="checkbox" name="breakfast" [(ngModel)]="desayuno" /> Añadir desayuno (COP 30.000)</label>
+            <label for="arrival">Llegada</label><input id="arrival" type="date" name="arrival" [(ngModel)]="llegada" (ngModelChange)="cotizacion = null" [min]="fechaMinima" />
+            <label for="departure">Salida</label><input id="departure" type="date" name="departure" [(ngModel)]="salida" (ngModelChange)="cotizacion = null" [min]="llegada || fechaMinima" />
             <button class="primary-button" type="submit">Calcular cotización</button>
           </form>
           @if (error) { <p class="error-message" role="alert">{{ error }}</p> }
@@ -45,17 +51,25 @@
             <div class="quote-breakdown" aria-live="polite">
               <div><span>{{ cotizacion.nights }} noches × {{ alojamiento.pricePerNight | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</span><strong>{{ cotizacion.nightlySubtotal | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
               <div><span>Limpieza</span><strong>{{ cotizacion.cleaningFee | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
-              <div><span>Servicio (10%)</span><strong>{{ cotizacion.serviceFee | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
+              <div><span>Servicio</span><strong>{{ cotizacion.serviceFee | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
               @if (cotizacion.longStayDiscount) { <div><span>Descuento de estancia larga</span><strong>−{{ cotizacion.longStayDiscount | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div> }
-              @if (cotizacion.extras) { <div><span>Desayuno</span><strong>{{ cotizacion.extras | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div> }
-              <div class="quote-total"><span>Total estimado</span><strong>{{ cotizacion.total | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
-              <button class="primary-button" type="button" (click)="continuarReserva()">Continuar con la reserva</button>
+              <div class="quote-total"><span>Total</span><strong>{{ cotizacion.total | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong></div>
+              <section class="payment-section" aria-labelledby="payment-title">
+                <h3 id="payment-title">Pago de prueba</h3>
+                <p class="payment-disclaimer">Pago simulado: ingresa 16 dígitos, un vencimiento futuro y un CVV de 3 dígitos. No uses datos reales; no se realiza ningún cobro.</p>
+                <label for="cardholder">Titular de la tarjeta</label><input id="cardholder" name="cardholder" [(ngModel)]="titular" autocomplete="cc-name" required maxlength="100" />
+                <label for="card-number">Número de tarjeta</label><input id="card-number" name="card-number" [ngModel]="numeroTarjeta" (ngModelChange)="formatearNumeroTarjeta($event)" autocomplete="off" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" required />
+                <div class="card-fields"><div><label for="card-expiry">Vencimiento</label><input id="card-expiry" name="card-expiry" [ngModel]="vencimiento" (ngModelChange)="formatearVencimiento($event)" placeholder="MM/AA" inputmode="numeric" autocomplete="off" maxlength="5" required /></div><div><label for="card-cvv">CVV</label><input id="card-cvv" name="card-cvv" [ngModel]="cvv" (ngModelChange)="limitarCvv($event)" type="password" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]{3}" required /></div></div>
+                <button class="primary-button" type="button" [disabled]="procesandoPago || !datosTarjetaCompletos" (click)="continuarReserva()">{{ procesandoPago ? 'Procesando…' : 'Pagar y confirmar reserva' }}</button>
+              </section>
             </div>
           }
           @if (avisoReserva) { <p class="status-note" role="status">{{ avisoReserva }}</p> }
         </aside>
       </div>
     </div>
+  } @else if (cargando) {
+    <section class="missing-property"><p role="status">Cargando alojamiento…</p></section>
   } @else {
     <section class="missing-property"><h1>Alojamiento no disponible</h1><p>La publicación no existe o no está activa.</p><a routerLink="/inicio">Volver a explorar</a></section>
   }

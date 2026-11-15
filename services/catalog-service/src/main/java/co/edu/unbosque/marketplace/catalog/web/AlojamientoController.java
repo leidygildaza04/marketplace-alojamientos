@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,26 @@ public class AlojamientoController {
 
     public AlojamientoController(AlojamientoService service) {
         this.service = service;
+    }
+
+    @GetMapping
+    public List<Alojamiento> listarPublicados() {
+        return service.listarPublicados();
+    }
+
+    @GetMapping("/mios")
+    public List<Alojamiento> listarDelAnfitrion(Authentication authentication) {
+        return service.listarDelAnfitrion(Long.valueOf(authentication.getName()));
+    }
+
+    @GetMapping("/administracion")
+    public List<Alojamiento> listarParaAdministracion() {
+        return service.listarTodos();
+    }
+
+    @GetMapping("/{id}")
+    public Alojamiento buscarPublicado(@PathVariable Long id) {
+        return service.buscarPublicado(id);
     }
 
     @PostMapping

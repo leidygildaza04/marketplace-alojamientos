@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DemoApiRole, DemoUserResponse, IdentityDemoService } from '../../services/identity-demo.service';
+import { IdentityApiService, IdentityRole, IdentityUser } from '../../services/identity-api.service';
 import { AuthSessionService } from '../../services/auth-session.service';
 
 @Component({
@@ -12,22 +12,27 @@ import { AuthSessionService } from '../../services/auth-session.service';
 })
 export class ProfilePanel {
   private readonly session = inject(AuthSessionService);
-  private readonly identityDemo = inject(IdentityDemoService);
+  private readonly identityApi = inject(IdentityApiService);
   open = false;
-  profile: DemoUserResponse | null = null;
+  profile: IdentityUser | null = null;
   fullName = '';
   phone = '';
   error = '';
   saved = false;
+  loading = false;
 
   show(): void {
-    const email = this.session.email;
-    this.profile = email ? this.identityDemo.getMe(email) : null;
-    this.fullName = this.profile?.fullName ?? '';
-    this.phone = this.profile?.phone ?? '';
+    this.profile = null;
+    this.fullName = '';
+    this.phone = '';
     this.error = '';
     this.saved = false;
     this.open = true;
+    this.loading = true;
+    this.identityApi.getMe().subscribe({
+      next: (profile) => { this.profile = profile; this.fullName = profile.fullName; this.phone = profile.phone ?? ''; this.loading = false; },
+      error: () => { this.error = 'No se pudo cargar el perfil. Inicia sesión nuevamente.'; this.loading = false; },
+    });
   }
 
   close(): void {
@@ -50,21 +55,14 @@ export class ProfilePanel {
       return;
     }
 
-    const email = this.session.email;
-    this.profile = email
-      ? this.identityDemo.updateMe(email, this.fullName, this.phone.trim() || null)
-      : null;
-    if (!this.profile) {
-      this.error = 'No se pudo actualizar el perfil de demostración.';
-      return;
-    }
-    this.fullName = this.profile.fullName;
-    this.phone = this.profile.phone ?? '';
-    this.saved = true;
+    this.identityApi.updateMe(this.fullName.trim(), this.phone.trim() || null).subscribe({
+      next: (profile) => { this.profile = profile; this.fullName = profile.fullName; this.phone = profile.phone ?? ''; this.saved = true; },
+      error: () => { this.error = 'No se pudo actualizar el perfil. Inténtalo nuevamente.'; },
+    });
   }
 
   get roleLabel(): string {
-    switch (this.profile?.role as DemoApiRole | undefined) {
+    switch (this.profile?.role as IdentityRole | undefined) {
       case 'HOST': return 'Anfitrión';
       case 'ADMIN': return 'Administrador';
       default: return 'Huésped';

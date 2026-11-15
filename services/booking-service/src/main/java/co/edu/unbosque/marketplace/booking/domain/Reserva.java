@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "reservas")
@@ -32,6 +33,9 @@ public class Reserva {
     @Column(nullable = false)
     private String estado;
 
+    @Column(name = "total", precision = 12, scale = 2)
+    private BigDecimal total;
+
     protected Reserva() {
     }
 
@@ -44,12 +48,19 @@ public class Reserva {
         this.estado = estado;
     }
 
+    public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
+            LocalDate checkOut, String estado, BigDecimal total) {
+        this(userId, alojamientoId, checkIn, checkOut, estado);
+        this.total = total;
+    }
+
     public Long getId() { return id; }
     public Long getUserId() { return userId; }
     public Long getAlojamientoId() { return alojamientoId; }
     public LocalDate getCheckIn() { return checkIn; }
     public LocalDate getCheckOut() { return checkOut; }
     public String getEstado() { return estado; }
+    public BigDecimal getTotal() { return total; }
 
     public void cambiarEstado(String estado) {
         this.estado = estado;
