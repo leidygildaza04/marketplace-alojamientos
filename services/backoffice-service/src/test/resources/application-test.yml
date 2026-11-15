@@ -11,5 +11,7 @@ spring:
     enabled: false
 
 app:
+  jwt:
+    secret: test-jwt-secret-test-jwt-secret-1234567890
   internal:
     secret: test-secret
