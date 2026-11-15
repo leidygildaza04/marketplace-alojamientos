@@ -16,6 +16,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
             InternalSecretFilter internalSecretFilter) throws Exception {
+        // APIs authenticate only with explicit Bearer/internal-secret headers; no browser auth cookies or sessions exist.
         http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/internal/**"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
