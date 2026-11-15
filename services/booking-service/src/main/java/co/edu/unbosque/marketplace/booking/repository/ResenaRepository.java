@@ -15,4 +15,10 @@ public interface ResenaRepository extends JpaRepository<Resena, Long> {
 
     @Query("select avg(r.calificacion) from Resena r where r.visible = true")
     Double promedioVisible();
+
+public interface ResenaRepository extends JpaRepository<Resena, Long> {
+
+    List<Resena> findByAlojamientoIdAndVisibleTrueOrderByFechaCreacionDesc(
+            Long alojamientoId
+    );
 }

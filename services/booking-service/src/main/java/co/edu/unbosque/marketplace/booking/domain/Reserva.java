@@ -6,11 +6,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "reservas")
+@Table(name = "reservas", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_reserva_usuario_idempotencia",
+                columnNames = {"id_usuario", "clave_idempotencia"}
+        )
+})
 public class Reserva {
 
     @Id
@@ -36,9 +43,19 @@ public class Reserva {
     @Column(name = "total", precision = 12, scale = 2)
     private BigDecimal total;
 
+    @Column(name = "clave_idempotencia", length = 100)
+    private String claveIdempotencia;
+
+    @Column(name = "total", precision = 12, scale = 2)
+    private BigDecimal total;
+
+    @Column(name = "cotizacion_snapshot", columnDefinition = "TEXT")
+    private String cotizacionSnapshot;
+
     protected Reserva() {
     }
 
+    // Constructor original para conservar compatibilidad.
     public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
             LocalDate checkOut, String estado) {
         this.userId = userId;
@@ -61,6 +78,59 @@ public class Reserva {
     public LocalDate getCheckOut() { return checkOut; }
     public String getEstado() { return estado; }
     public BigDecimal getTotal() { return total; }
+    // Constructor con clave de idempotencia.
+    public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
+            LocalDate checkOut, String estado, String claveIdempotencia) {
+        this.userId = userId;
+        this.alojamientoId = alojamientoId;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.estado = estado;
+        this.claveIdempotencia = claveIdempotencia;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getAlojamientoId() {
+        return alojamientoId;
+    }
+
+    public LocalDate getCheckIn() {
+        return checkIn;
+    }
+
+    public LocalDate getCheckOut() {
+        return checkOut;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public String getClaveIdempotencia() {
+        return claveIdempotencia;
+    }
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public String getCotizacionSnapshot() {
+        return cotizacionSnapshot;
+    }
+
+    public void guardarCotizacion(
+            BigDecimal total,
+            String cotizacionSnapshot) {
+        this.total = total;
+        this.cotizacionSnapshot = cotizacionSnapshot;
+    }
 
     public void cambiarEstado(String estado) {
         this.estado = estado;

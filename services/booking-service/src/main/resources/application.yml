@@ -1,5 +1,6 @@
 server:
   port: 8083
+
 spring:
   application:
     name: booking-service
@@ -13,6 +14,7 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+
 management:
   endpoints:
     web:
@@ -24,3 +26,6 @@ app:
     secret: ${JWT_SECRET}
   internal:
     secret: ${INTERNAL_SERVICE_SECRET}
+  cotizacion:
+    porcentaje-servicio: ${COTIZACION_PORCENTAJE_SERVICIO:10}
+    porcentaje-descuento: ${COTIZACION_PORCENTAJE_DESCUENTO:0}

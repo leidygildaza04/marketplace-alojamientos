@@ -1,7 +1,10 @@
 package co.edu.unbosque.marketplace.catalog.domain;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "alojamientos")
@@ -32,6 +35,9 @@ public class Alojamiento {
     @Column(name = "precio_noche", precision = 12, scale = 2)
     private BigDecimal precioNoche;
 
+    @Column(name = "tarifa_limpieza", nullable = false, precision = 12, scale = 2)
+    private BigDecimal tarifaLimpieza = BigDecimal.ZERO;
+
     private Integer capacidad;
 
     @Column(name = "tipo", length = 60, nullable = false)
@@ -58,6 +64,35 @@ public class Alojamiento {
     @Column(name = "motivo_bloqueo", length = 1000)
     private String motivoBloqueo;
 
+    @Column(name = "tipo_alojamiento", length = 50)
+    private String tipoAlojamiento;
+
+    @Column(columnDefinition = "TEXT")
+    private String reglas;
+
+    @Column(name = "politica_cancelacion", columnDefinition = "TEXT")
+    private String politicaCancelacion;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "alojamiento_servicios",
+            joinColumns = @JoinColumn(name = "id_alojamiento")
+    )
+    @Column(name = "servicio", nullable = false, length = 100)
+    private List<String> servicios = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(
+            name = "alojamiento_imagenes",
+            joinColumns = @JoinColumn(name = "id_alojamiento")
+    )
+    @Column(name = "imagen_url", nullable = false, length = 1000)
+    private List<String> imagenes = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "id_alojamiento", nullable = false)
+    private List<ServicioAdicional> serviciosAdicionales = new ArrayList<>();
+
     protected Alojamiento() {
     }
 
@@ -77,6 +112,7 @@ public class Alojamiento {
         this.ciudad = ciudad;
         this.precioNoche = precioNoche;
         this.capacidad = capacidad;
+        this.tarifaLimpieza = BigDecimal.ZERO;
         this.estado = "BORRADOR";
     }
 
@@ -84,6 +120,7 @@ public class Alojamiento {
         this.hostId = hostId;
         this.titulo = titulo;
         this.estado = estado;
+        this.tarifaLimpieza = BigDecimal.ZERO;
     }
 
     public Long getId() {
@@ -114,6 +151,10 @@ public class Alojamiento {
         return precioNoche;
     }
 
+    public BigDecimal getTarifaLimpieza() {
+        return tarifaLimpieza;
+    }
+
     public Integer getCapacidad() {
         return capacidad;
     }
@@ -131,6 +172,67 @@ public class Alojamiento {
 
     public String getMotivoBloqueo() {
         return motivoBloqueo;
+    }
+
+    public String getTipoAlojamiento() {
+        return tipoAlojamiento;
+    }
+
+    public String getReglas() {
+        return reglas;
+    }
+
+    public String getPoliticaCancelacion() {
+        return politicaCancelacion;
+    }
+
+    public List<String> getServicios() {
+        return servicios;
+    }
+
+    public List<String> getImagenes() {
+        return imagenes;
+    }
+
+    public List<ServicioAdicional> getServiciosAdicionales() {
+        return serviciosAdicionales;
+    }
+
+    public void actualizarDatosComplementarios(
+            String tipoAlojamiento,
+            String reglas,
+            String politicaCancelacion,
+            List<String> servicios,
+            List<String> imagenes
+    ) {
+        this.tipoAlojamiento = tipoAlojamiento;
+        this.reglas = reglas;
+        this.politicaCancelacion = politicaCancelacion;
+
+        this.servicios.clear();
+        if (servicios != null) {
+            this.servicios.addAll(servicios);
+        }
+
+        this.imagenes.clear();
+        if (imagenes != null) {
+            this.imagenes.addAll(imagenes);
+        }
+    }
+
+    public void actualizarTarifas(
+            BigDecimal tarifaLimpieza,
+            List<ServicioAdicional> serviciosAdicionales
+    ) {
+        this.tarifaLimpieza = tarifaLimpieza != null
+                ? tarifaLimpieza
+                : BigDecimal.ZERO;
+
+        this.serviciosAdicionales.clear();
+
+        if (serviciosAdicionales != null) {
+            this.serviciosAdicionales.addAll(serviciosAdicionales);
+        }
     }
 
     public void bloquear(String motivo) {
@@ -194,7 +296,7 @@ public class Alojamiento {
 
         if (!estadoReconocido) {
             throw new IllegalArgumentException(
-                    "Estado de publicación no reconocido: " + nuevoEstado
+                    "Estado de publicacion no reconocido: " + nuevoEstado
             );
         }
 
