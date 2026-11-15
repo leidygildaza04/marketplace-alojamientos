@@ -31,5 +31,5 @@ INSERT INTO alojamiento_imagenes (id_alojamiento, imagen_url)
     SELECT id_alojamiento, imagen_url
     FROM alojamientos
     WHERE imagen_url IS NOT NULL
-      AND imagen_url <> ''
+      AND CHAR_LENGTH(imagen_url) > 0
       AND CHAR_LENGTH(imagen_url) <= 1000;
