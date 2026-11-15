@@ -16,7 +16,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
             InternalSecretFilter internalSecretFilter) throws Exception {
         // APIs authenticate only with explicit Bearer/internal-secret headers; no browser auth cookies or sessions exist.
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/internal/**"))
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/internal/**")) // NOSONAR: API stateless con JWT en cabecera; sin cookies ni sesion, CSRF no aplica
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**").permitAll()

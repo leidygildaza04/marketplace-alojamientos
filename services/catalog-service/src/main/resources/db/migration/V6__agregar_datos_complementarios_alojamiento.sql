@@ -8,7 +8,7 @@ ALTER TABLE alojamientos
 
 CREATE TABLE alojamiento_servicios (
     id_alojamiento BIGINT NOT NULL,
-    servicio VARCHAR(100) NOT NULL,
+    servicio VARCHAR(100) NOT NULL, -- NOSONAR: MySQL, no Oracle
     CONSTRAINT fk_servicio_alojamiento
         FOREIGN KEY (id_alojamiento)
         REFERENCES alojamientos(id_alojamiento)
@@ -16,7 +16,7 @@ CREATE TABLE alojamiento_servicios (
 
 CREATE TABLE alojamiento_imagenes (
     id_alojamiento BIGINT NOT NULL,
-    imagen_url VARCHAR(1000) NOT NULL,
+    imagen_url VARCHAR(1000) NOT NULL, -- NOSONAR: MySQL, no Oracle
     CONSTRAINT fk_imagen_alojamiento
         FOREIGN KEY (id_alojamiento)
         REFERENCES alojamientos(id_alojamiento)
