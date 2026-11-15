@@ -29,7 +29,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     @Query(value = "SELECT COALESCE(SUM(total), 0) FROM reservas", nativeQuery = true)
     BigDecimal sumarIngresosRegistrados();
-}
+
     Optional<Reserva> findByUserIdAndClaveIdempotencia(
             Long userId, String claveIdempotencia);
 

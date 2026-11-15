@@ -9,9 +9,6 @@ import org.springframework.web.client.RestClient;
 @Component
 public class CatalogPeriodClient {
 
-    public record DatosPrecio(Long id, String estado, java.math.BigDecimal precioNoche,
-            java.math.BigDecimal cargoLimpieza) { }
-
     private final RestClient restClient;
     private final String internalSecret;
 
@@ -21,11 +18,6 @@ public class CatalogPeriodClient {
 
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
         this.internalSecret = internalSecret;
-    }
-
-    public DatosPrecio obtenerPrecio(Long alojamientoId) {
-        return restClient.get().uri("/api/alojamientos/{id}", alojamientoId)
-                .retrieve().body(DatosPrecio.class);
     }
 
     public void reservar(Long alojamientoId, Long reservaId,

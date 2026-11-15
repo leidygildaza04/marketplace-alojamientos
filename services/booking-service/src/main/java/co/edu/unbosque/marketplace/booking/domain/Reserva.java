@@ -9,7 +9,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "reservas", uniqueConstraints = {
@@ -40,9 +39,6 @@ public class Reserva {
     @Column(nullable = false)
     private String estado;
 
-    @Column(name = "total", precision = 12, scale = 2)
-    private BigDecimal total;
-
     @Column(name = "clave_idempotencia", length = 100)
     private String claveIdempotencia;
 
@@ -71,13 +67,6 @@ public class Reserva {
         this.total = total;
     }
 
-    public Long getId() { return id; }
-    public Long getUserId() { return userId; }
-    public Long getAlojamientoId() { return alojamientoId; }
-    public LocalDate getCheckIn() { return checkIn; }
-    public LocalDate getCheckOut() { return checkOut; }
-    public String getEstado() { return estado; }
-    public BigDecimal getTotal() { return total; }
     // Constructor con clave de idempotencia.
     public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
             LocalDate checkOut, String estado, String claveIdempotencia) {

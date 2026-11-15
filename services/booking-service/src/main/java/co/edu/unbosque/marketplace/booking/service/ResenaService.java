@@ -4,10 +4,14 @@ import co.edu.unbosque.marketplace.booking.domain.Resena;
 import co.edu.unbosque.marketplace.booking.dto.CrearResenaRequest;
 import co.edu.unbosque.marketplace.booking.dto.ResenaResponse;
 import co.edu.unbosque.marketplace.booking.dto.ResenasAlojamientoResponse;
+import co.edu.unbosque.marketplace.booking.dto.ResumenResenasResponse;
 import co.edu.unbosque.marketplace.booking.repository.ResenaRepository;
 import co.edu.unbosque.marketplace.booking.repository.ReservaRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +62,30 @@ public class ResenaService {
         return new ResenasAlojamientoResponse(Math.round(average * 10.0) / 10.0, items.size(), items);
     }
 
+    /** Resumen de reseñas visibles que consume catalog-service. */
+    @Transactional(readOnly = true)
+    public ResumenResenasResponse consultarPorAlojamiento(Long alojamientoId) {
+        List<Resena> visibles =
+                resenas.findByAlojamientoIdAndVisibleTrueOrderByFechaCreacionDesc(alojamientoId);
+
+        if (visibles.isEmpty()) {
+            return new ResumenResenasResponse(null, 0, List.of());
+        }
+
+        double promedioCalculado = visibles.stream()
+                .mapToInt(Resena::getCalificacion)
+                .average()
+                .orElse(0.0);
+
+        BigDecimal promedio = BigDecimal.valueOf(promedioCalculado)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new ResumenResenasResponse(
+                promedio,
+                visibles.size(),
+                visibles.stream().map(ResenaResponse::desde).toList());
+    }
+
     @Transactional(readOnly = true)
     public java.util.List<ResenaResponse> listarMias(Long userId) {
         return resenas.findByUserIdOrderByFechaCreacionDesc(userId).stream().map(ResenaResponse::desde).toList();
@@ -74,56 +102,5 @@ public class ResenaService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reseña no existe"));
         review.setVisible(visible);
         return ResenaResponse.desde(resenas.save(review));
-import co.edu.unbosque.marketplace.booking.dto.ResenaResponse;
-import co.edu.unbosque.marketplace.booking.dto.ResumenResenasResponse;
-import co.edu.unbosque.marketplace.booking.repository.ResenaRepository;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.List;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-@Service
-public class ResenaService {
-
-    private final ResenaRepository repository;
-
-    public ResenaService(ResenaRepository repository) {
-        this.repository = repository;
-    }
-
-    @Transactional(readOnly = true)
-    public ResumenResenasResponse consultarPorAlojamiento(Long alojamientoId) {
-
-        List<Resena> resenas =
-                repository.findByAlojamientoIdAndVisibleTrueOrderByFechaCreacionDesc(
-                        alojamientoId
-                );
-
-        if (resenas.isEmpty()) {
-            return new ResumenResenasResponse(
-                    null,
-                    0,
-                    List.of()
-            );
-        }
-
-        double promedioCalculado = resenas.stream()
-                .mapToInt(Resena::getCalificacion)
-                .average()
-                .orElse(0.0);
-
-        BigDecimal promedio = BigDecimal.valueOf(promedioCalculado)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        List<ResenaResponse> respuestas = resenas.stream()
-                .map(ResenaResponse::desde)
-                .toList();
-
-        return new ResumenResenasResponse(
-                promedio,
-                resenas.size(),
-                respuestas
-        );
     }
 }

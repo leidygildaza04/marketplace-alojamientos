@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/alojamientos/*/resenas").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reservas/mias").hasRole("GUEST")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reservas/anfitrion/*").hasAnyRole("HOST", "ADMIN")
                         .requestMatchers("/api/v1/reservas/**").hasRole("GUEST")
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(
