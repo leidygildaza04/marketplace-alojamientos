@@ -3,7 +3,8 @@ ALTER TABLE alojamientos
 
 -- Conserva la tarifa guardada con la columna tarifa_aseo de V2.
 UPDATE alojamientos
-    SET tarifa_limpieza = tarifa_aseo;
+    SET tarifa_limpieza = tarifa_aseo
+    WHERE tarifa_aseo IS NOT NULL;
 
 CREATE TABLE alojamiento_servicios_adicionales (
     id_servicio_adicional BIGINT NOT NULL AUTO_INCREMENT,

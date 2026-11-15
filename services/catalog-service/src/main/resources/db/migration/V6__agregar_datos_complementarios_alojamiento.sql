@@ -24,7 +24,8 @@ CREATE TABLE alojamiento_imagenes (
 
 -- Conserva los datos guardados con las columnas de V2 (tipo e imagen_url).
 UPDATE alojamientos
-    SET tipo_alojamiento = LEFT(tipo, 50);
+    SET tipo_alojamiento = LEFT(tipo, 50)
+    WHERE tipo IS NOT NULL;
 
 INSERT INTO alojamiento_imagenes (id_alojamiento, imagen_url)
     SELECT id_alojamiento, imagen_url

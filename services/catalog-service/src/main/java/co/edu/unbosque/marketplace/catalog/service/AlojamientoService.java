@@ -30,6 +30,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AlojamientoService {
 
+    private static final String ESTADO_ACTIVA = "ACTIVA";
+    private static final String ALOJAMIENTO_NO_ENCONTRADO = "Alojamiento no encontrado";
+
     private final AlojamientoRepository repository;
     private final PeriodoDisponibilidadRepository periodoDisponibilidadRepository;
     private final RequisitosMinimosAlojamientoValidator validator;
@@ -58,7 +61,7 @@ public class AlojamientoService {
 
     @Transactional(readOnly = true)
     public List<Alojamiento> listarPublicados() {
-        return repository.findByEstado("ACTIVA");
+        return repository.findByEstado(ESTADO_ACTIVA);
     }
 
     @Transactional(readOnly = true)
@@ -74,9 +77,9 @@ public class AlojamientoService {
     @Transactional(readOnly = true)
     public Alojamiento buscarPublicado(Long alojamientoId) {
         Alojamiento alojamiento = repository.findById(alojamientoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Alojamiento no encontrado"));
-        if (!"ACTIVA".equals(alojamiento.getEstado())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alojamiento no encontrado");
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ALOJAMIENTO_NO_ENCONTRADO));
+        if (!ESTADO_ACTIVA.equals(alojamiento.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ALOJAMIENTO_NO_ENCONTRADO);
         }
         return alojamiento;
     }
@@ -153,10 +156,10 @@ public class AlojamientoService {
     public DetalleAlojamientoResponse consultarDetalle(Long alojamientoId) {
 
         Alojamiento alojamiento = repository.findById(alojamientoId)
-                .filter(a -> "ACTIVA".equals(a.getEstado()))
+                .filter(a -> ESTADO_ACTIVA.equals(a.getEstado()))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         List<PeriodoDisponibilidadResponse> disponibilidad =
@@ -257,7 +260,7 @@ public class AlojamientoService {
         }
 
         try {
-            alojamiento.cambiarEstadoA("ACTIVA");
+            alojamiento.cambiarEstadoA(ESTADO_ACTIVA);
         } catch (IllegalStateException exception) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -504,7 +507,7 @@ public class AlojamientoService {
         Alojamiento alojamiento = repository.findById(alojamientoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         validarAutorizacion(usuarioId, esAdministrador, alojamiento);
@@ -521,7 +524,7 @@ public class AlojamientoService {
         Alojamiento alojamiento = repository.findByIdForUpdate(alojamientoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         validarAutorizacion(usuarioId, esAdministrador, alojamiento);

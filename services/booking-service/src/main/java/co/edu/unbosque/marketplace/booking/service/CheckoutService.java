@@ -18,6 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CheckoutService {
+    private static final String RESERVA_CONFIRMADA = "CONFIRMADA";
+    private static final String RESERVA_RECHAZADA = "RECHAZADA";
+    private static final String PAGO_APROBADO = "APROBADO";
+    private static final String PAGO_RECHAZADO = "RECHAZADO";
+
     private final CotizacionService cotizaciones;
     private final SimuladorPagoService simulador;
     private final CatalogPeriodClient catalog;
@@ -38,21 +43,21 @@ public class CheckoutService {
         try { resultado = simulador.procesar(request.numeroTarjeta(), request.vencimiento(), request.cvv(), request.titular()); }
         catch (IllegalArgumentException ex) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()); }
 
-        String estado = resultado.aprobado() ? "CONFIRMADA" : "RECHAZADA";
+        String estado = resultado.aprobado() ? RESERVA_CONFIRMADA : RESERVA_RECHAZADA;
         Reserva reserva = transactions.execute(s -> reservas.save(new Reserva(userId, request.alojamientoId(),
                 request.checkIn(), request.checkOut(), "PENDIENTE", quote.total())));
         if (reserva == null || reserva.getId() == null) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No fue posible crear la reserva");
         String referencia = "SIM-" + UUID.randomUUID();
 
         if (!resultado.aprobado()) {
-            finalizar(reserva.getId(), "RECHAZADA", resultado, quote.total(), referencia);
-            return respuesta(reserva, quote.total(), "RECHAZADO", referencia,
+            finalizar(reserva.getId(), RESERVA_RECHAZADA, resultado, quote.total(), referencia);
+            return respuesta(reserva, quote.total(), PAGO_RECHAZADO, referencia,
                     "Pago de prueba rechazado. No se realizó ningún cobro.");
         }
         try {
             catalog.reservar(request.alojamientoId(), reserva.getId(), request.checkIn(), request.checkOut());
         } catch (RestClientException ex) {
-            finalizar(reserva.getId(), "RECHAZADA",
+            finalizar(reserva.getId(), RESERVA_RECHAZADA,
                     new SimuladorPagoService.Resultado(false, resultado.marca(), resultado.ultimosCuatro(), "NO_DISPONIBLE"),
                     quote.total(), referencia);
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -63,7 +68,7 @@ public class CheckoutService {
         } catch (RuntimeException ex) {
             try {
                 catalog.liberar(request.alojamientoId(), reserva.getId());
-                cambiarEstado(reserva.getId(), "RECHAZADA");
+                cambiarEstado(reserva.getId(), RESERVA_RECHAZADA);
             } catch (RestClientException compensacion) {
                 ex.addSuppressed(compensacion);
                 cambiarEstado(reserva.getId(), "COMPENSACION_PENDIENTE");
@@ -71,7 +76,7 @@ public class CheckoutService {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "No fue posible guardar el resultado del checkout; las fechas fueron liberadas o requieren revisión.", ex);
         }
-        return respuesta(reserva, quote.total(), "APROBADO", referencia,
+        return respuesta(reserva, quote.total(), PAGO_APROBADO, referencia,
                 "Pago de prueba aprobado. No se realizó ningún cobro real.");
     }
 
@@ -81,7 +86,7 @@ public class CheckoutService {
             Reserva actual = reservas.findById(id).orElseThrow();
             actual.cambiarEstado(estado);
             reservas.save(actual);
-            pagos.save(new Pago(id, total, resultado.aprobado() ? "APROBADO" : "RECHAZADO",
+            pagos.save(new Pago(id, total, resultado.aprobado() ? PAGO_APROBADO : PAGO_RECHAZADO,
                     resultado.marca(), resultado.ultimosCuatro(), referencia, resultado.codigo()));
             return null;
         });
@@ -100,6 +105,6 @@ public class CheckoutService {
     private CheckoutResponse respuesta(Reserva reserva, java.math.BigDecimal total, String pago,
             String referencia, String mensaje) {
         return new CheckoutResponse(reserva.getId(), "R-" + reserva.getId(),
-                pago.equals("APROBADO") ? "CONFIRMADA" : "RECHAZADA", total, pago, referencia, mensaje);
+                pago.equals(PAGO_APROBADO) ? RESERVA_CONFIRMADA : RESERVA_RECHAZADA, total, pago, referencia, mensaje);
     }
 }
