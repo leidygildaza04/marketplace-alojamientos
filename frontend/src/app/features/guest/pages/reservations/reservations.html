@@ -8,14 +8,40 @@
     <h1>Mis reservas</h1>
     <p class="lead">Consulta los detalles y el estado de tus próximas estancias.</p>
     @if (aviso) { <p class="notice" role="status">{{ aviso }}</p> }
+    @if (error) { <p class="notice" role="alert">{{ error }}</p> }
+    @if (cargando) { <p role="status">Cargando reservas…</p> }
     <div class="reservation-list">
       @for (reserva of reservas; track reserva.code) {
         <article class="reservation-card">
           <div class="reservation-top"><span class="reservation-code">{{ reserva.code }}</span><span class="status" [class.status-confirmed]="reserva.status === 'CONFIRMADA'">{{ reserva.status }}</span></div>
           <h2>{{ reserva.property }}</h2><p>{{ reserva.city }}</p>
-          <dl><div><dt>Fechas</dt><dd>{{ reserva.arrival | date:'d MMM':'':'es-CO' }} – {{ reserva.departure | date:'d MMM':'':'es-CO' }}</dd></div><div><dt>Total</dt><dd>{{ reserva.total | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</dd></div><div><dt>Política</dt><dd>{{ reserva.policy }}</dd></div></dl>
+          <dl><div><dt>Fechas</dt><dd>{{ reserva.arrival | date:'d MMM':'':'es-CO' }} – {{ reserva.departure | date:'d MMM':'':'es-CO' }}</dd></div><div><dt>Total</dt><dd>@if (reserva.total != null) { {{ reserva.total | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }} } @else { Pendiente de cotización }</dd></div><div><dt>Política</dt><dd>{{ reserva.policy }}</dd></div></dl>
           @if (reserva.status === 'CONFIRMADA') { <button class="outline-button" type="button" (click)="abrirCancelacion(reserva)">Ver cancelación</button> }
-          @if (reserva.status === 'COMPLETADA') { <span class="review-hint">La reseña estará disponible al integrar las reservas del servicio.</span> }
+          @if (reserva.status === 'COMPLETADA' && !resenasEnviadas.has(reserva.id ?? '')) {
+            @if (reservaParaCalificar?.id === reserva.id) {
+              <div class="review-form">
+                <label>Tu calificación
+                  <select [(ngModel)]="calificacion" name="calificacion">
+                    <option [ngValue]="5">★★★★★ · Excelente</option>
+                    <option [ngValue]="4">★★★★☆ · Muy bueno</option>
+                    <option [ngValue]="3">★★★☆☆ · Bueno</option>
+                    <option [ngValue]="2">★★☆☆☆ · Regular</option>
+                    <option [ngValue]="1">★☆☆☆☆ · Malo</option>
+                  </select>
+                </label>
+                <label>Comentario (opcional)
+                  <textarea [(ngModel)]="comentarioResena" [name]="'comentario-' + reserva.id" maxlength="1000" rows="3" placeholder="¿Cómo fue tu estancia?"></textarea>
+                </label>
+                <div class="review-actions">
+                  <button class="outline-button" type="button" (click)="reservaParaCalificar = null">Cancelar</button>
+                  <button class="primary-button" type="button" [disabled]="enviandoResena" (click)="enviarCalificacion()">{{ enviandoResena ? 'Guardando…' : 'Enviar calificación' }}</button>
+                </div>
+              </div>
+            } @else {
+              <button class="outline-button" type="button" (click)="abrirCalificacion(reserva)">Calificar alojamiento</button>
+            }
+          }
+          @if (reserva.status === 'COMPLETADA' && resenasEnviadas.has(reserva.id ?? '')) { <span class="review-hint">Ya calificaste este alojamiento. ¡Gracias por compartir tu experiencia!</span> }
         </article>
       }
     </div>
@@ -25,7 +51,7 @@
     <div class="dialog-backdrop" (click)="reservaParaCancelar = null">
       <section class="cancel-dialog" role="dialog" aria-modal="true" aria-labelledby="cancel-title" (click)="$event.stopPropagation()">
         <h2 id="cancel-title">Cancelar reserva</h2>
-        <p>Política {{ reservaParaCancelar.policy }}. Devolución estimada: <strong>{{ devolucion | currency:'COP':'symbol-narrow':'1.0-0':'es-CO' }}</strong>.</p>
+        <p>Política {{ reservaParaCancelar.policy }}. La cancelación liberará las fechas de la estancia. Los pagos de prueba no generan cobros ni reembolsos reales.</p>
         <label for="reason">Motivo</label><textarea id="reason" [(ngModel)]="motivo" name="motivo" rows="3" placeholder="Cuéntanos el motivo"></textarea>
         <div class="dialog-actions"><button class="outline-button" type="button" (click)="reservaParaCancelar = null">Volver</button><button class="primary-button" type="button" [disabled]="!motivo.trim()" (click)="cancelarReserva()">Confirmar cancelación</button></div>
       </section>

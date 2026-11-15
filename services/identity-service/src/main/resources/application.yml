@@ -1,10 +1,10 @@
 server:
-  port: 8081
+  port: 8085
 spring:
   application:
     name: identity-service
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/identity_db}
+    url: ${DB_URL:jdbc:mysql://localhost:3307/identity_db}
     username: ${DB_USER:app}
     password: ${DB_PASSWORD:app}
   jpa:
@@ -20,10 +20,13 @@ management:
         include: health,info
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    secret: ${JWT_SECRET}
     expiration-minutes: 60
   services:
     catalog-url: ${CATALOG_SERVICE_URL:http://localhost:8082}
     booking-url: ${BOOKING_SERVICE_URL:http://localhost:8083}
   internal:
-    secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
+    secret: ${INTERNAL_SERVICE_SECRET}
+  bootstrap-admin:
+    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}

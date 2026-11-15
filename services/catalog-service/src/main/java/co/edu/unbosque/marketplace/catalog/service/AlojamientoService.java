@@ -30,6 +30,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AlojamientoService {
 
+    private static final String ESTADO_ACTIVA = "ACTIVA";
+    private static final String ALOJAMIENTO_NO_ENCONTRADO = "Alojamiento no encontrado";
+
     private final AlojamientoRepository repository;
     private final PeriodoDisponibilidadRepository periodoDisponibilidadRepository;
     private final RequisitosMinimosAlojamientoValidator validator;
@@ -54,6 +57,31 @@ public class AlojamientoService {
         this.bookingReviewClient = bookingReviewClient;
         this.bookingResenaClient = bookingResenaClient;
         this.notificationClient = notificationClient;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarPublicados() {
+        return repository.findByEstado(ESTADO_ACTIVA);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarDelAnfitrion(Long hostId) {
+        return repository.findByHostId(hostId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Alojamiento> listarTodos() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Alojamiento buscarPublicado(Long alojamientoId) {
+        Alojamiento alojamiento = repository.findById(alojamientoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ALOJAMIENTO_NO_ENCONTRADO));
+        if (!ESTADO_ACTIVA.equals(alojamiento.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ALOJAMIENTO_NO_ENCONTRADO);
+        }
+        return alojamiento;
     }
 
     // SCRUM-72: BUSQUEDA DE ALOJAMIENTOS CON FILTROS
@@ -128,10 +156,10 @@ public class AlojamientoService {
     public DetalleAlojamientoResponse consultarDetalle(Long alojamientoId) {
 
         Alojamiento alojamiento = repository.findById(alojamientoId)
-                .filter(a -> "ACTIVA".equals(a.getEstado()))
+                .filter(a -> ESTADO_ACTIVA.equals(a.getEstado()))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         List<PeriodoDisponibilidadResponse> disponibilidad =
@@ -194,7 +222,6 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
-
         alojamiento.actualizarDatosComplementarios(
                 request.tipoAlojamiento(),
                 request.reglas(),
@@ -233,7 +260,7 @@ public class AlojamientoService {
         }
 
         try {
-            alojamiento.cambiarEstadoA("ACTIVA");
+            alojamiento.cambiarEstadoA(ESTADO_ACTIVA);
         } catch (IllegalStateException exception) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -287,7 +314,7 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
-
+        actualizarDatosComplementariosDesdeRequest(alojamiento, request);
         actualizarTarifasDesdeRequest(alojamiento, request);
 
         Alojamiento alojamientoGuardado =
@@ -392,6 +419,32 @@ public class AlojamientoService {
         return bloqueado;
     }
 
+    // Los datos complementarios que no llegan en la solicitud conservan su valor actual.
+
+    private void actualizarDatosComplementariosDesdeRequest(
+            Alojamiento alojamiento,
+            CrearAlojamientoRequest request
+    ) {
+
+        alojamiento.actualizarDatosComplementarios(
+                request.tipoAlojamiento() != null
+                        ? request.tipoAlojamiento()
+                        : alojamiento.getTipoAlojamiento(),
+                request.reglas() != null
+                        ? request.reglas()
+                        : alojamiento.getReglas(),
+                request.politicaCancelacion() != null
+                        ? request.politicaCancelacion()
+                        : alojamiento.getPoliticaCancelacion(),
+                request.servicios() != null
+                        ? request.servicios()
+                        : new ArrayList<>(alojamiento.getServicios()),
+                request.imagenes() != null
+                        ? request.imagenes()
+                        : new ArrayList<>(alojamiento.getImagenes())
+        );
+    }
+
     // SCRUM-75: ACTUALIZAR TARIFA DE LIMPIEZA Y SERVICIOS ADICIONALES
 
     private void actualizarTarifasDesdeRequest(
@@ -454,7 +507,7 @@ public class AlojamientoService {
         Alojamiento alojamiento = repository.findById(alojamientoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         validarAutorizacion(usuarioId, esAdministrador, alojamiento);
@@ -471,7 +524,7 @@ public class AlojamientoService {
         Alojamiento alojamiento = repository.findByIdForUpdate(alojamientoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Alojamiento no encontrado"
+                        ALOJAMIENTO_NO_ENCONTRADO
                 ));
 
         validarAutorizacion(usuarioId, esAdministrador, alojamiento);
@@ -511,4 +564,5 @@ public class AlojamientoService {
             );
         }
     }
+
 }

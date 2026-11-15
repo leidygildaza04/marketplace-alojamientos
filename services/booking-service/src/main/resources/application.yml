@@ -5,7 +5,7 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${BOOKING_DB_URL:jdbc:mysql://localhost:3306/booking_db}
+    url: ${BOOKING_DB_URL:jdbc:mysql://localhost:3307/booking_db}
     username: ${BOOKING_DB_USER:app}
     password: ${BOOKING_DB_PASSWORD:app}
   jpa:
@@ -22,8 +22,10 @@ management:
         include: health,info
 
 app:
+  jwt:
+    secret: ${JWT_SECRET}
   internal:
-    secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
+    secret: ${INTERNAL_SERVICE_SECRET}
   cotizacion:
     porcentaje-servicio: ${COTIZACION_PORCENTAJE_SERVICIO:10}
     porcentaje-descuento: ${COTIZACION_PORCENTAJE_DESCUENTO:0}

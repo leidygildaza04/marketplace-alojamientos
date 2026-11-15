@@ -16,7 +16,7 @@ public interface AlojamientoRepository extends
         JpaSpecificationExecutor<Alojamiento> {
 
     List<Alojamiento> findByHostIdAndEstado(Long hostId, String estado);
-
+    List<Alojamiento> findByEstado(String estado);
     List<Alojamiento> findByHostId(Long hostId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

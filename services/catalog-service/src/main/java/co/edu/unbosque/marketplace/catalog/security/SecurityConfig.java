@@ -33,6 +33,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health/**").permitAll()
 
+                .requestMatchers(HttpMethod.GET, "/api/alojamientos/mios")
+                    .hasAnyRole("HOST", "ADMIN")
+
+                .requestMatchers(HttpMethod.GET, "/api/alojamientos/administracion")
+                    .hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.GET, "/api/alojamientos", "/api/alojamientos/*")
+                    .permitAll()
+
                 .requestMatchers(HttpMethod.POST, "/api/alojamientos")
                     .hasRole("HOST")
 
@@ -46,6 +55,9 @@ public class SecurityConfig {
                     .hasAnyRole("HOST", "ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/alojamientos/*/bloquear")
                     .hasRole("ADMIN")
+
+                .requestMatchers("/api/v1/alojamientos/*/periodos-disponibilidad/**")
+                    .hasAnyRole("HOST", "ADMIN")
 
                 .requestMatchers("/api/v1/**", "/internal/**").permitAll()
                 .anyRequest().authenticated()

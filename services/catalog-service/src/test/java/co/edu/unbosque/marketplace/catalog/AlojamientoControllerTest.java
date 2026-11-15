@@ -42,7 +42,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "app.jwt.secret=test-jwt-secret-test-jwt-secret-1234567890",
+        "app.internal.secret=secret-test-catalog"
 })
 @AutoConfigureMockMvc
 @Transactional

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,7 +43,9 @@ import org.springframework.test.web.servlet.MvcResult;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "app.jwt.secret=test-jwt-secret-test-jwt-secret-1234567890",
+        "app.internal.secret=dev-internal-secret-change-me"
 })
 @AutoConfigureMockMvc
 class ReservationLifecycleTest {
@@ -97,6 +100,7 @@ class ReservationLifecycleTest {
                 eq(LocalDate.of(2027, 2, 4)));
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "confirmacion-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
@@ -149,6 +153,7 @@ class ReservationLifecycleTest {
                 + "\"resultadoPago\":\"APROBADO\"}";
 
         MvcResult primeraRespuesta = mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "reintento-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contenido))
@@ -159,6 +164,7 @@ class ReservationLifecycleTest {
                 primeraRespuesta.getResponse().getContentAsString());
 
         MvcResult segundaRespuesta = mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "reintento-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contenido))
@@ -191,6 +197,7 @@ class ReservationLifecycleTest {
                 eq(LocalDate.of(2027, 2, 4)));
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "clave-conflicto-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
@@ -200,6 +207,7 @@ class ReservationLifecycleTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "clave-conflicto-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":99,"
@@ -228,7 +236,7 @@ class ReservationLifecycleTest {
         doNothing().when(catalog).liberar(44L, reserva.getId());
 
         mockMvc.perform(post(
-                        "/api/v1/reservas/" + reserva.getId() + "/cancelar"))
+                        "/api/v1/reservas/" + reserva.getId() + "/cancelar").with(user("5").roles("GUEST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("CANCELADA"));
 
@@ -250,6 +258,7 @@ class ReservationLifecycleTest {
                 any(Long.class));
 
         mockMvc.perform(post("/api/v1/reservas")
+                        .with(user("5").roles("GUEST"))
                         .header("Idempotency-Key", "pago-rechazado-001")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":5,\"alojamientoId\":44,"
@@ -287,7 +296,8 @@ class ReservationLifecycleTest {
                 .thenReturn(new CatalogAccommodationSummaryResponse(
                         44L, "Apartamento de prueba", "Bogota", "Calle 10"));
 
-        mockMvc.perform(get("/api/v1/reservas/huesped/701"))
+        mockMvc.perform(get("/api/v1/reservas/huesped/701")
+                        .with(user("701").roles("GUEST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(reserva.getId()))
@@ -324,7 +334,8 @@ class ReservationLifecycleTest {
                 .thenReturn(new CatalogAccommodationSummaryResponse(
                         44L, "Alojamiento del anfitrion", "Bogota", "Carrera 15"));
 
-        mockMvc.perform(get("/api/v1/reservas/anfitrion/90"))
+        mockMvc.perform(get("/api/v1/reservas/anfitrion/90")
+                        .with(user("90").roles("HOST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(reservaPropia.getId()))
@@ -370,7 +381,8 @@ class ReservationLifecycleTest {
                 .thenReturn(new CatalogAccommodationSummaryResponse(
                         44L, "Casa de prueba", "Medellin", "Calle 20"));
 
-        mockMvc.perform(get("/api/v1/reservas/" + reserva.getId()))
+        mockMvc.perform(get("/api/v1/reservas/" + reserva.getId())
+                        .with(user("5").roles("GUEST")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reserva.getId()))
                 .andExpect(jsonPath("$.tituloAlojamiento").value("Casa de prueba"))

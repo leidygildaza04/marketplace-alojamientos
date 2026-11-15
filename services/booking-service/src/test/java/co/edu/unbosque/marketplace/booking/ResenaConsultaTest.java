@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "app.jwt.secret=test-jwt-secret-test-jwt-secret-1234567890",
+        "app.internal.secret=dev-internal-secret-change-me"
 })
 @AutoConfigureMockMvc
 @Transactional
@@ -41,10 +43,10 @@ class ResenaConsultaTest {
 
     @Test
     void consultaPromedioYSoloIncluyeResenasVisibles() throws Exception {
-        resenas.save(new Resena(25L, 10L, 5, "Excelente alojamiento"));
-        resenas.save(new Resena(25L, 11L, 3, "Buena experiencia"));
+        resenas.save(new Resena(1L, 10L, 25L, 5, "Excelente alojamiento"));
+        resenas.save(new Resena(2L, 11L, 25L, 3, "Buena experiencia"));
 
-        Resena oculta = new Resena(25L, 12L, 1, "Comentario no visible");
+        Resena oculta = new Resena(3L, 12L, 25L, 1, "Comentario no visible");
         ReflectionTestUtils.setField(oculta, "visible", false);
         resenas.save(oculta);
 

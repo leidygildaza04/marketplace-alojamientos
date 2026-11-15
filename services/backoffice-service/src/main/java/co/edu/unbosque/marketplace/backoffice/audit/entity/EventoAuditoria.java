@@ -10,21 +10,21 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "evento_auditoria")
+@Table(name = "audit_events")
 public class EventoAuditoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_evento")
+    @Column(name = "id")
     private Long idEvento;
 
-    @Column(name = "id_usuario")
+    @Column(name = "actor_id")
     private Long idUsuario;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "action", nullable = false, length = 80)
     private String accion;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "entity", nullable = false, length = 500)
     private String entidad;
 
     @Column(name = "id_entidad", nullable = false)
@@ -33,10 +33,10 @@ public class EventoAuditoria {
     @Column(columnDefinition = "TEXT")
     private String detalle;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "result", nullable = false, length = 120)
     private String resultado;
 
-    @Column(name = "fecha_evento", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime fechaEvento;
 
     protected EventoAuditoria() {

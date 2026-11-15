@@ -443,6 +443,26 @@ public class ReservaService {
         return ReservaResponse.desde(cancelada);
     }
 
+    public java.util.List<ReservaResponse> listarMias(Long userId) {
+        LocalDate hoy = LocalDate.now(ZONA_HORARIA);
+        return transactions.execute(status -> {
+            var finalizadas = reservas.findByUserIdAndEstadoAndCheckOutLessThanEqual(
+                    userId, ESTADO_CONFIRMADA, hoy);
+            finalizadas.forEach(reserva -> reserva.cambiarEstado("COMPLETADA"));
+            reservas.saveAll(finalizadas);
+            return reservas.findByUserId(userId).stream().map(ReservaResponse::desde).toList();
+        });
+    }
+
+    public ReservaResponse cancelar(Long reservaId, Long userId) {
+        Reserva reserva = reservas.findById(reservaId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reserva no existe"));
+        if (!reserva.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para cancelar esta reserva");
+        }
+        return cancelar(reservaId);
+    }
+
     /**
      * Conserva las reservas vigentes del alojamiento y las marca
      * para revisión manual después de un bloqueo administrativo.

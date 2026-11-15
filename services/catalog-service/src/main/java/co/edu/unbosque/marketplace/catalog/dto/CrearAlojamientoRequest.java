@@ -25,6 +25,7 @@ public record CrearAlojamientoRequest(
     @NotNull(message = "La capacidad es obligatoria")
     @Min(value = 1, message = "La capacidad debe ser mayor que cero")
     Integer capacidad,
+
     @Size(max = 50, message = "El tipo de alojamiento no puede superar 50 caracteres")
     String tipoAlojamiento,
     String reglas,

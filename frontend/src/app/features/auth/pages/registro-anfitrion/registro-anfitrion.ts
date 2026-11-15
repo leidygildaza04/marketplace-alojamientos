@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { IdentityDemoService } from '../../../../core/services/identity-demo.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { IdentityApiService } from '../../../../core/services/identity-api.service';
 import { matchingPasswordsValidator } from '../../auth.validators';
 
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s]).+$/;
@@ -15,9 +16,10 @@ const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s]).+$/
 export class RegistroAnfitrion {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly identityDemo = inject(IdentityDemoService);
+  private readonly identityApi = inject(IdentityApiService);
   mensaje = '';
   error = '';
+  isSubmitting = false;
 
   form = this.fb.nonNullable.group(
     {
@@ -40,16 +42,23 @@ export class RegistroAnfitrion {
 
     const value = this.form.getRawValue();
     const email = value.correo.trim().toLowerCase();
-    try {
-      this.identityDemo.register({
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+    this.identityApi.register({
         email,
         password: value.contrasenia,
         fullName: `${value.nombres.trim()} ${value.apellidos.trim()}`,
         role: 'HOST',
+      }).subscribe({
+        next: () => { this.isSubmitting = false; void this.router.navigate(['/login'], { queryParams: { email } }); },
+        error: (error: unknown) => { this.isSubmitting = false; this.error = this.registrationError(error); },
       });
-      void this.router.navigate(['/login'], { queryParams: { email } });
-    } catch (error) {
-      this.error = error instanceof Error ? error.message : 'No se pudo crear la cuenta de anfitrión.';
-    }
+  }
+
+  private registrationError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 0) return 'No se pudo conectar con Identity. Verifica que el servicio esté disponible.';
+    if (error instanceof HttpErrorResponse && error.status === 409) return 'Ya existe una cuenta con ese correo.';
+    if (error instanceof HttpErrorResponse && error.status === 400) return 'Revisa los datos y la política de contraseña.';
+    return 'No se pudo crear la cuenta de anfitrión. Inténtalo nuevamente.';
   }
 }

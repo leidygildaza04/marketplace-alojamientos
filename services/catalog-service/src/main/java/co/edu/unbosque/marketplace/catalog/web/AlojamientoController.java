@@ -25,6 +25,21 @@ public class AlojamientoController {
         this.service = service;
     }
 
+    @GetMapping
+    public List<Alojamiento> listarPublicados() {
+        return service.listarPublicados();
+    }
+
+    @GetMapping("/mios")
+    public List<Alojamiento> listarDelAnfitrion(Authentication authentication) {
+        return service.listarDelAnfitrion(Long.valueOf(authentication.getName()));
+    }
+
+    @GetMapping("/administracion")
+    public List<Alojamiento> listarParaAdministracion() {
+        return service.listarTodos();
+    }
+
     // SCRUM-72: BUSCAR ALOJAMIENTOS CON FILTROS
 
     @GetMapping("/buscar")

@@ -61,6 +61,12 @@ public class Reserva {
         this.estado = estado;
     }
 
+    public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
+            LocalDate checkOut, String estado, BigDecimal total) {
+        this(userId, alojamientoId, checkIn, checkOut, estado);
+        this.total = total;
+    }
+
     // Constructor con clave de idempotencia.
     public Reserva(Long userId, Long alojamientoId, LocalDate checkIn,
             LocalDate checkOut, String estado, String claveIdempotencia) {

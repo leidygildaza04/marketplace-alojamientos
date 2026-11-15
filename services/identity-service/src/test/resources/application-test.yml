@@ -13,3 +13,5 @@ app:
   jwt:
     secret: test-secret-test-secret-test-secret-1234
     expiration-minutes: 5
+  internal:
+    secret: test-internal-secret-test-internal-secret-1234

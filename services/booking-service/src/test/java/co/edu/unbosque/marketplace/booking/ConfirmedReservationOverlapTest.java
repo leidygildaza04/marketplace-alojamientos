@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "app.jwt.secret=test-jwt-secret-test-jwt-secret-1234567890",
+        "app.internal.secret=dev-internal-secret-change-me"
 })
 @AutoConfigureMockMvc
 @Transactional

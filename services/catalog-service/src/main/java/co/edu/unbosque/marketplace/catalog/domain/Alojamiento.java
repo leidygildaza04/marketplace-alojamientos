@@ -6,6 +6,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 @Entity
 @Table(name = "alojamientos")
 public class Alojamiento {
@@ -55,7 +58,10 @@ public class Alojamiento {
     @Column(name = "politica_cancelacion", columnDefinition = "TEXT")
     private String politicaCancelacion;
 
-    @ElementCollection
+    // Las colecciones se cargan junto con el alojamiento porque la API lo devuelve
+    // completo y se serializa fuera de la transacción (open-in-view desactivado).
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(
             name = "alojamiento_servicios",
             joinColumns = @JoinColumn(name = "id_alojamiento")
@@ -63,7 +69,8 @@ public class Alojamiento {
     @Column(name = "servicio", nullable = false, length = 100)
     private List<String> servicios = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(
             name = "alojamiento_imagenes",
             joinColumns = @JoinColumn(name = "id_alojamiento")
@@ -71,7 +78,8 @@ public class Alojamiento {
     @Column(name = "imagen_url", nullable = false, length = 1000)
     private List<String> imagenes = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @JoinColumn(name = "id_alojamiento", nullable = false)
     private List<ServicioAdicional> serviciosAdicionales = new ArrayList<>();
 

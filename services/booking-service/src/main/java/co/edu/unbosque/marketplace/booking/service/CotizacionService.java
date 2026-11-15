@@ -3,11 +3,15 @@ package co.edu.unbosque.marketplace.booking.service;
 
 import co.edu.unbosque.marketplace.booking.client.AlojamientoPreciosResponse;
 import co.edu.unbosque.marketplace.booking.client.CatalogPricingClient;
-import co.edu.unbosque.marketplace.booking.dto.CrearCotizacionRequest;
+import co.edu.unbosque.marketplace.booking.dto.CotizacionRequest;
 import co.edu.unbosque.marketplace.booking.dto.CotizacionResponse;
+import co.edu.unbosque.marketplace.booking.dto.CotizacionResumenResponse;
+import co.edu.unbosque.marketplace.booking.dto.CrearCotizacionRequest;
 import co.edu.unbosque.marketplace.booking.dto.ServicioAdicionalCotizadoResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +26,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class CotizacionService {
 
     private static final BigDecimal CIEN = new BigDecimal("100");
+    private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Bogota");
+    private static final String MONEDA = "COP";
 
     private final CatalogPricingClient catalog;
     private final BigDecimal porcentajeServicio;
@@ -60,6 +66,36 @@ public class CotizacionService {
 
         return base.multiply(porcentaje)
                 .divide(CIEN, 2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Cotización resumida para el flujo de reserva del frontend. Usa las mismas
+     * reglas de {@link #calcular(CrearCotizacionRequest)} sin servicios adicionales.
+     */
+    public CotizacionResumenResponse cotizar(CotizacionRequest request) {
+
+        if (request == null || request.alojamientoId() == null || request.checkIn() == null
+                || request.checkOut() == null || !request.checkIn().isBefore(request.checkOut())
+                || request.checkIn().isBefore(LocalDate.now(ZONA_HORARIA))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Selecciona fechas válidas para cotizar");
+        }
+
+        CotizacionResponse cotizacion = calcular(new CrearCotizacionRequest(
+                request.alojamientoId(),
+                request.checkIn(),
+                request.checkOut(),
+                List.of()));
+
+        return new CotizacionResumenResponse(
+                Math.toIntExact(cotizacion.noches()),
+                cotizacion.subtotalAlojamiento(),
+                cotizacion.tarifaLimpieza(),
+                cotizacion.tarifaServicio(),
+                cotizacion.descuento(),
+                cotizacion.total(),
+                MONEDA);
     }
 
     public CotizacionResponse calcular(CrearCotizacionRequest request) {

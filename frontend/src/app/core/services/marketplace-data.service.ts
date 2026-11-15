@@ -48,13 +48,14 @@ export interface MarketplaceReview {
 }
 
 export interface GuestReservation {
+  id?: string;
   code: string;
   property: string;
   city: string;
   arrival: string;
   departure: string;
-  total: number;
-  status: 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
+  total: number | null;
+  status: 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA' | 'PENDIENTE' | 'RECHAZADA' | 'REVISION_MANUAL' | 'CANCELACION_PENDIENTE';
   policy: 'Flexible' | 'Moderada';
 }
 

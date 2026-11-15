@@ -1,9 +1,13 @@
 
 import { registerLocaleData } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import localeEs from '@angular/common/locales/es';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { EMPTY, of } from 'rxjs';
 import { Home } from './home';
+import { MarketplaceApiService } from '../../../../core/services/marketplace-api.service';
 import { MarketplaceDataService } from '../../../../core/services/marketplace-data.service';
 
 registerLocaleData(localeEs, 'es-CO');
@@ -14,9 +18,25 @@ describe('Home - Comparación de alojamientos SCRUM-28', () => {
   let marketplace: MarketplaceDataService;
 
   beforeEach(async () => {
+    // Home carga los alojamientos desde la API; en las pruebas se responde con
+    // las semillas locales para no depender del backend.
+    const semillas = new MarketplaceDataService();
+
     await TestBed.configureTestingModule({
       imports: [Home],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: MarketplaceDataService, useValue: semillas },
+        {
+          provide: MarketplaceApiService,
+          useValue: {
+            getAccommodations: () => of(semillas.accommodations),
+            getAccommodationReviews: () => EMPTY,
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);

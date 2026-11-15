@@ -1,5 +1,10 @@
-﻿ALTER TABLE alojamientos
+ALTER TABLE alojamientos
     ADD COLUMN tarifa_limpieza DECIMAL(12,2) NOT NULL DEFAULT 0.00;
+
+-- Conserva la tarifa guardada con la columna tarifa_aseo de V2.
+UPDATE alojamientos
+    SET tarifa_limpieza = tarifa_aseo
+    WHERE tarifa_aseo IS NOT NULL;
 
 CREATE TABLE alojamiento_servicios_adicionales (
     id_servicio_adicional BIGINT NOT NULL AUTO_INCREMENT,

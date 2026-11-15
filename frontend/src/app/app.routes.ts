@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { requireRole } from './core/services/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -20,11 +21,13 @@ export const routes: Routes = [
   },
   {
     path: 'inicio',
+    canActivate: [requireRole('guest', 'host', 'admin')],
     loadComponent: () =>
       import('./features/guest/pages/home/home').then((module) => module.Home),
   },
   {
     path: 'alojamiento/:id',
+    canActivate: [requireRole('guest', 'host', 'admin')],
     loadComponent: () =>
       import('./features/guest/pages/detail/detail').then(
         (module) => module.AccommodationDetail,
@@ -32,6 +35,7 @@ export const routes: Routes = [
   },
   {
     path: 'reservas',
+    canActivate: [requireRole('guest')],
     loadComponent: () =>
       import('./features/guest/pages/reservations/reservations').then(
         (module) => module.GuestReservations,
@@ -39,6 +43,7 @@ export const routes: Routes = [
   },
   {
     path: 'anfitrion',
+    canActivate: [requireRole('host')],
     loadComponent: () =>
       import('./features/host/pages/dashboard/host-dashboard').then(
         (module) => module.HostDashboard,
@@ -46,6 +51,7 @@ export const routes: Routes = [
   },
   {
     path: 'administracion',
+    canActivate: [requireRole('admin')],
     loadComponent: () =>
       import('./features/admin/pages/dashboard/admin-dashboard').then(
         (module) => module.AdminDashboard,

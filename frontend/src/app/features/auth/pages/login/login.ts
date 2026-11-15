@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { IdentityDemoService, DemoApiRole } from '../../../../core/services/identity-demo.service';
+import { IdentityApiService, IdentityRole } from '../../../../core/services/identity-api.service';
 import { AuthSessionService, UserRole } from '../../../../core/services/auth-session.service';
 
 @Component({
@@ -15,6 +16,7 @@ export class Login {
   email = '';
   password = '';
   error = '';
+  isSubmitting = false;
   showingPasswordRecovery = false;
   recoveryEmail = '';
   recoveryToken = '';
@@ -27,22 +29,46 @@ export class Login {
   constructor(
     private readonly router: Router,
     private readonly session: AuthSessionService,
-    private readonly identityDemo: IdentityDemoService,
+    private readonly identityApi: IdentityApiService,
   ) {}
 
   enter(): void {
-    const response = this.identityDemo.login(this.email, this.password);
-    if (!response) {
-      this.error = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
-      return;
-    }
-
     this.error = '';
-    this.session.signIn(this.email, this.toUserRole(response.role));
-    const destination = response.role === 'HOST'
-      ? '/anfitrion'
-      : response.role === 'ADMIN' ? '/administracion' : '/inicio';
-    void this.router.navigateByUrl(destination);
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
+    this.session.clearSession();
+
+    this.identityApi.login(this.email, this.password).subscribe({
+      next: (response) => {
+        const role = this.toUserRole(response.role);
+        if (!response.token || !role) {
+          this.session.clearSession();
+          this.error = 'Identity devolvió una respuesta de inicio de sesión inválida.';
+          this.isSubmitting = false;
+          return;
+        }
+
+        this.session.setSession(response.token, role, this.email);
+        this.identityApi.getMe().subscribe({
+          next: (user) => {
+            this.session.setSession(response.token, role, user.email, user.id);
+            this.isSubmitting = false;
+            const destination = role === 'host' ? '/anfitrion' : role === 'admin' ? '/administracion' : '/inicio';
+            void this.router.navigateByUrl(destination);
+          },
+          error: (error: unknown) => {
+            this.session.clearSession();
+            this.error = this.loginError(error);
+            this.isSubmitting = false;
+          },
+        });
+      },
+      error: (error: unknown) => {
+        this.session.clearSession();
+        this.error = this.loginError(error);
+        this.isSubmitting = false;
+      },
+    });
   }
 
   showPasswordRecovery(): void {
@@ -65,13 +91,19 @@ export class Login {
   requestPasswordRecovery(): void {
     this.recoveryError = '';
     this.recoveryMessage = '';
-    try {
-      const response = this.identityDemo.requestRecovery(this.recoveryEmail);
-      this.recoveryToken = response.token;
-      this.recoveryMessage = 'Token de prueba generado; el backend actual no envía correo.';
-    } catch (error) {
-      this.recoveryError = error instanceof Error ? error.message : 'No se pudo iniciar la recuperación.';
+    if (!this.recoveryEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.recoveryEmail.trim())) {
+      this.recoveryError = 'Ingresa un correo válido.';
+      return;
     }
+    this.isSubmitting = true;
+    this.identityApi.requestPasswordRecovery(this.recoveryEmail.trim().toLowerCase()).subscribe({
+      next: (response) => {
+        this.recoveryToken = response.token;
+        this.recoveryMessage = response.message;
+        this.isSubmitting = false;
+      },
+      error: () => { this.recoveryError = 'No se pudo iniciar la recuperación. Verifica el correo e inténtalo de nuevo.'; this.isSubmitting = false; },
+    });
   }
 
   resetPassword(): void {
@@ -85,13 +117,11 @@ export class Login {
       this.recoveryError = 'Las contraseñas no coinciden.';
       return;
     }
-    if (!this.identityDemo.resetPassword(this.recoveryToken, this.newPassword)) {
-      this.recoveryError = 'El token es inválido, venció o ya fue utilizado.';
-      return;
-    }
-
-    this.passwordResetComplete = true;
-    this.recoveryMessage = 'Contraseña actualizada. Ya puedes iniciar sesión.';
+    this.isSubmitting = true;
+    this.identityApi.resetPassword(this.recoveryToken, this.newPassword).subscribe({
+      next: () => { this.passwordResetComplete = true; this.recoveryMessage = 'Contraseña actualizada. Ya puedes iniciar sesión.'; this.isSubmitting = false; },
+      error: () => { this.recoveryError = 'El token es inválido, venció o ya fue utilizado.'; this.isSubmitting = false; },
+    });
   }
 
   private isBackendPasswordValid(value: string): boolean {
@@ -102,11 +132,31 @@ export class Login {
       && /[^a-zA-Z0-9\s]/.test(value);
   }
 
-  private toUserRole(role: DemoApiRole): UserRole {
+  private toUserRole(role: IdentityRole | string): UserRole | null {
     switch (role) {
       case 'HOST': return 'host';
       case 'ADMIN': return 'admin';
-      default: return 'guest';
+      case 'GUEST': return 'guest';
+      default: return null;
     }
+  }
+
+  private loginError(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'No fue posible iniciar sesión. Inténtalo nuevamente.';
+    }
+    if (error.status === 0) {
+      return 'No se pudo conectar con Identity. Verifica que el servicio esté disponible.';
+    }
+    if (error.status === 401) {
+      return 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
+    }
+    if (error.status === 403) {
+      return 'La cuenta está desactivada. Contacta al administrador.';
+    }
+    if (error.status === 400) {
+      return 'Ingresa un correo y una contraseña válidos.';
+    }
+    return 'No fue posible iniciar sesión. Inténtalo nuevamente.';
   }
 }
