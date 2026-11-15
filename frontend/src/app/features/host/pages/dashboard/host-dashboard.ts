@@ -151,11 +151,11 @@ export class HostDashboard {
       ciudad: this.draft.city.trim(),
       precioNoche: this.draft.pricePerNight,
       capacidad: this.draft.capacity,
-      tipo: this.draft.type,
-      imagen: this.draft.image.trim(),
-      servicios: JSON.stringify(amenities),
+      tipoAlojamiento: this.draft.type,
+      imagenes: this.draft.image.trim() ? [this.draft.image.trim()] : [],
+      servicios: amenities,
       reglas: JSON.stringify(rules),
-      cargoLimpieza: 0,
+      tarifaLimpieza: 0,
       politicaCancelacion: 'Flexible',
     }).subscribe({
       next: (created) => {

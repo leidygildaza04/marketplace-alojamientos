@@ -26,27 +26,6 @@ public record CrearAlojamientoRequest(
     @Min(value = 1, message = "La capacidad debe ser mayor que cero")
     Integer capacidad,
 
-    @Size(max = 60, message = "El tipo no puede superar 60 caracteres")
-    String tipo,
-
-    @Size(max = 1024, message = "La URL de imagen no puede superar 1024 caracteres")
-    String imagen,
-
-    String servicios,
-    String reglas,
-
-    @DecimalMin(value = "0.00", message = "El cargo de limpieza no puede ser negativo")
-    BigDecimal cargoLimpieza,
-
-    @Size(max = 30, message = "La política de cancelación no puede superar 30 caracteres")
-    String politicaCancelacion
-
-) {
-    public CrearAlojamientoRequest(String titulo, String descripcion, String direccion, String ciudad,
-            BigDecimal precioNoche, Integer capacidad) {
-        this(titulo, descripcion, direccion, ciudad, precioNoche, capacidad, null, null, null, null, null, null);
-    }
-}
     @Size(max = 50, message = "El tipo de alojamiento no puede superar 50 caracteres")
     String tipoAlojamiento,
     String reglas,

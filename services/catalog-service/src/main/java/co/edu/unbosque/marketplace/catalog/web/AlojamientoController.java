@@ -13,7 +13,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -41,9 +40,6 @@ public class AlojamientoController {
         return service.listarTodos();
     }
 
-    @GetMapping("/{id}")
-    public Alojamiento buscarPublicado(@PathVariable Long id) {
-        return service.buscarPublicado(id);
     // SCRUM-72: BUSCAR ALOJAMIENTOS CON FILTROS
 
     @GetMapping("/buscar")

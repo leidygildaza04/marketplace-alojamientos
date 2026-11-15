@@ -66,7 +66,7 @@ export interface AuditEventRecord {
 
 export interface CatalogAccommodation {
   id: number;
-  hostId: number;
+  hostId?: number;
   titulo: string;
   descripcion: string | null;
   direccion: string | null;
@@ -74,12 +74,13 @@ export interface CatalogAccommodation {
   precioNoche: number;
   capacidad: number;
   estado: 'BORRADOR' | 'ACTIVA' | 'PAUSADA' | 'BLOQUEADA' | 'PENDIENTE_REVISION';
-  tipo: string | null;
-  imagen: string | null;
-  servicios: string | null;
+  tipoAlojamiento: string | null;
+  imagenes: string[] | null;
+  servicios: string[] | null;
   reglas: string | null;
-  cargoLimpieza: number | null;
+  tarifaLimpieza: number | null;
   politicaCancelacion: string | null;
+  serviciosAdicionales?: { nombre: string; precio: number }[];
 }
 
 export interface SaveAccommodationRequest {
@@ -89,12 +90,13 @@ export interface SaveAccommodationRequest {
   ciudad: string;
   precioNoche: number;
   capacidad: number;
-  tipo?: string;
-  imagen?: string;
-  servicios?: string;
+  tipoAlojamiento?: string;
+  imagenes?: string[];
+  servicios?: string[];
   reglas?: string;
-  cargoLimpieza?: number;
+  tarifaLimpieza?: number;
   politicaCancelacion?: string;
+  serviciosAdicionales?: { nombre: string; precio: number }[];
 }
 
 export interface AvailabilityPeriodRecord {
@@ -267,16 +269,17 @@ export class MarketplaceApiService {
 
   toAccommodation(item: CatalogAccommodation): Accommodation {
     return {
-      id: String(item.id), title: item.titulo, city: item.ciudad ?? '', country: 'Colombia', type: item.tipo ?? 'Alojamiento',
-      capacity: item.capacidad, pricePerNight: Number(item.precioNoche), cleaningFee: Number(item.cargoLimpieza ?? 0), rating: 0,
-      image: item.imagen ?? 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80',
+      id: String(item.id), title: item.titulo, city: item.ciudad ?? '', country: 'Colombia', type: item.tipoAlojamiento ?? 'Alojamiento',
+      capacity: item.capacidad, pricePerNight: Number(item.precioNoche), cleaningFee: Number(item.tarifaLimpieza ?? 0), rating: 0,
+      image: item.imagenes?.[0] ?? 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80',
       description: item.descripcion ?? '', amenities: this.parseList(item.servicios), rules: this.parseList(item.reglas), cancellationPolicy: item.politicaCancelacion ?? 'Flexible',
-      status: item.estado === 'PENDIENTE_REVISION' ? 'BORRADOR' : item.estado, host: `Anfitrión ${item.hostId}`, favorite: false,
+      status: item.estado === 'PENDIENTE_REVISION' ? 'BORRADOR' : item.estado, host: `Anfitrión ${item.hostId ?? ''}`.trim(), favorite: false,
     };
   }
 
-  private parseList(value: string | null): string[] {
+  private parseList(value: string[] | string | null): string[] {
     if (!value) return [];
+    if (Array.isArray(value)) return value;
     try {
       const parsed: unknown = JSON.parse(value);
       if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === 'string');

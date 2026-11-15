@@ -219,8 +219,6 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
-        actualizarDatosExtra(alojamiento, request);
-
         alojamiento.actualizarDatosComplementarios(
                 request.tipoAlojamiento(),
                 request.reglas(),
@@ -313,8 +311,6 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
-        actualizarDatosExtra(alojamiento, request);
-
         actualizarTarifasDesdeRequest(alojamiento, request);
 
         Alojamiento alojamientoGuardado =
@@ -539,13 +535,4 @@ public class AlojamientoService {
         }
     }
 
-    private void actualizarDatosExtra(Alojamiento alojamiento, CrearAlojamientoRequest request) {
-        if (request.tipo() != null || request.imagen() != null || request.servicios() != null
-                || request.reglas() != null || request.cargoLimpieza() != null
-                || request.politicaCancelacion() != null) {
-            alojamiento.actualizarDatosExtra(request.tipo(), request.imagen(), request.servicios(),
-                    request.reglas(), request.cargoLimpieza(), request.politicaCancelacion());
-        }
-    }
-}
 }
