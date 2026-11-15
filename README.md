@@ -32,21 +32,34 @@ El simulador acepta cualquier número ficticio de 16 dígitos, una fecha de venc
 
 Requisitos: JDK 21, Maven 3.9+, Node 22 y Docker.
 
-```bash
+```powershell
 # 1. Base de datos
 docker compose up -d
 
 # 2. Empaqueta el backend una vez
 mvn package
 
-# 3. Ejecuta cada JAR en su propia terminal
+# 3. Genera secretos locales. Copia ambos valores y configúralos iguales
+#    en cada terminal donde vayas a iniciar un servicio backend.
+$jwtSecret = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
+$internalSecret = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
+Write-Output "JWT_SECRET=$jwtSecret"
+Write-Output "INTERNAL_SERVICE_SECRET=$internalSecret"
+
+# 4. En cada terminal backend, pega los mismos valores generados:
+$env:JWT_SECRET = '<JWT_SECRET generado>'
+$env:INTERNAL_SERVICE_SECRET = '<INTERNAL_SERVICE_SECRET generado>'
+
+# 5. Ejecuta cada JAR en su propia terminal
 java -jar services/identity-service/target/identity-service-0.1.0-SNAPSHOT-exec.jar
 java -jar services/catalog-service/target/catalog-service-0.1.0-SNAPSHOT.jar
 java -jar services/booking-service/target/booking-service-0.1.0-SNAPSHOT-exec.jar
 java -jar services/backoffice-service/target/backoffice-service-0.1.0-SNAPSHOT.jar
 
-# 4. Frontend (el proxy local reenvía las rutas a los servicios)
-cd frontend && npm install && npm start
+# 6. Frontend (el proxy local reenvía las rutas a los servicios)
+Set-Location frontend
+npm install
+npm start
 ```
 
 Pruebas:
@@ -70,8 +83,11 @@ Para crear una cuenta administradora local, inicia Identity con credenciales de 
 
 ```powershell
 $env:ADMIN_BOOTSTRAP_EMAIL = "admin@travesia.test"
-$env:ADMIN_BOOTSTRAP_PASSWORD = "TravesiaAdmin123!"
-java -jar services/identity-service/target/identity-service-0.1.0-SNAPSHOT.jar
+$securePassword = Read-Host "Elige una contraseña de administrador (mínimo 12 caracteres)" -AsSecureString
+$env:ADMIN_BOOTSTRAP_PASSWORD = [Net.NetworkCredential]::new('', $securePassword).Password
+$env:JWT_SECRET = '<el mismo JWT_SECRET generado arriba>'
+$env:INTERNAL_SERVICE_SECRET = '<el mismo INTERNAL_SERVICE_SECRET generado arriba>'
+java -jar services/identity-service/target/identity-service-0.1.0-SNAPSHOT-exec.jar
 ```
 
 La contraseña debe tener al menos 12 caracteres. El servicio crea el administrador solo si ese correo aún no existe; el registro público nunca permite elegir ADMIN. Estas credenciales son de desarrollo local: cámbialas antes de compartir o desplegar el proyecto. Para crear anfitrión, usa `/registro-anfitrion` en la aplicación.
@@ -84,11 +100,12 @@ Las reservas confirmadas pasan a `COMPLETADA` al llegar la fecha de salida, cuan
 |---|---|---|
 | `DB_URL` | URL JDBC de Identity | `jdbc:mysql://localhost:3307/identity_db` |
 | `CATALOG_DB_URL`, `BOOKING_DB_URL`, `BACKOFFICE_DB_URL` | URL JDBC de cada servicio | `jdbc:mysql://localhost:3307/<servicio>_db` |
-| `DB_USER` / `DB_PASSWORD` | Credenciales de MySQL | `app` / `app` |
-| `JWT_SECRET` | Clave para firmar tokens (mínimo 32 caracteres) | valor de desarrollo |
+| `DB_USER` / `DB_PASSWORD` | Credenciales locales de MySQL | `app` / `app` |
+| `JWT_SECRET` | Clave aleatoria compartida para firmar tokens (mínimo 32 caracteres) | obligatoria, sin valor predeterminado |
+| `INTERNAL_SERVICE_SECRET` | Clave compartida para llamadas entre servicios | obligatoria, sin valor predeterminado |
 | `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD` | Crea o sincroniza el administrador de desarrollo al iniciar Identity | sin valor; deshabilitado |
 
-Docker publica MySQL en el puerto local `3307` y el motor escucha en el puerto interno `3306`. Cada servicio usa la misma clave JWT de desarrollo por defecto para validar tokens entre servicios; configura una clave compartida propia fuera de desarrollo.
+Docker publica MySQL en el puerto local `3307` y el motor escucha en el puerto interno `3306`. Todos los servicios backend deben recibir los mismos valores de `JWT_SECRET` e `INTERNAL_SERVICE_SECRET`; no hay claves predeterminadas en la configuración.
 
 ## Flujo de trabajo
 

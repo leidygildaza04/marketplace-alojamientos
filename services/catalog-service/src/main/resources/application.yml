@@ -26,9 +26,9 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    secret: ${JWT_SECRET}
   internal:
-    secret: ${INTERNAL_SERVICE_SECRET:dev-internal-secret-change-me}
+    secret: ${INTERNAL_SERVICE_SECRET}
 
 services:
   backoffice:
