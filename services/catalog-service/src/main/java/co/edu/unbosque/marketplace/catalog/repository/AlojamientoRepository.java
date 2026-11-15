@@ -19,8 +19,6 @@ public interface AlojamientoRepository extends
     List<Alojamiento> findByEstado(String estado);
     List<Alojamiento> findByHostId(Long hostId);
 
-    List<Alojamiento> findByHostId(Long hostId);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Alojamiento a WHERE a.id = :id")
     Optional<Alojamiento> findByIdForUpdate(@Param("id") Long id);

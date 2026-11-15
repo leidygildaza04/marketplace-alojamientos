@@ -311,6 +311,7 @@ public class AlojamientoService {
                 request.precioNoche(),
                 request.capacidad()
         );
+        actualizarDatosComplementariosDesdeRequest(alojamiento, request);
         actualizarTarifasDesdeRequest(alojamiento, request);
 
         Alojamiento alojamientoGuardado =
@@ -413,6 +414,32 @@ public class AlojamientoService {
         }, "bloqueo");
 
         return bloqueado;
+    }
+
+    // Los datos complementarios que no llegan en la solicitud conservan su valor actual.
+
+    private void actualizarDatosComplementariosDesdeRequest(
+            Alojamiento alojamiento,
+            CrearAlojamientoRequest request
+    ) {
+
+        alojamiento.actualizarDatosComplementarios(
+                request.tipoAlojamiento() != null
+                        ? request.tipoAlojamiento()
+                        : alojamiento.getTipoAlojamiento(),
+                request.reglas() != null
+                        ? request.reglas()
+                        : alojamiento.getReglas(),
+                request.politicaCancelacion() != null
+                        ? request.politicaCancelacion()
+                        : alojamiento.getPoliticaCancelacion(),
+                request.servicios() != null
+                        ? request.servicios()
+                        : new ArrayList<>(alojamiento.getServicios()),
+                request.imagenes() != null
+                        ? request.imagenes()
+                        : new ArrayList<>(alojamiento.getImagenes())
+        );
     }
 
     // SCRUM-75: ACTUALIZAR TARIFA DE LIMPIEZA Y SERVICIOS ADICIONALES
