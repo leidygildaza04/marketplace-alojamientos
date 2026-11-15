@@ -8,11 +8,15 @@ import static org.mockito.Mockito.when;
 
 import co.edu.unbosque.marketplace.catalog.client.AuditClient;
 import co.edu.unbosque.marketplace.catalog.client.BookingReviewClient;
+import co.edu.unbosque.marketplace.catalog.client.BookingResenaClient;
 import co.edu.unbosque.marketplace.catalog.client.NotificationClient;
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
 import co.edu.unbosque.marketplace.catalog.repository.AlojamientoRepository;
+import co.edu.unbosque.marketplace.catalog.repository.PeriodoDisponibilidadRepository;
+
 import java.math.BigDecimal;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +32,16 @@ class AlojamientoServiceAuditTest {
     private AlojamientoRepository repository;
 
     @Mock
+    private PeriodoDisponibilidadRepository periodoDisponibilidadRepository;
+
+    @Mock
     private AuditClient auditClient;
 
     @Mock
     private BookingReviewClient bookingReviewClient;
+
+    @Mock
+    private BookingResenaClient bookingResenaClient;
 
     @Mock
     private NotificationClient notificationClient;
@@ -42,9 +52,11 @@ class AlojamientoServiceAuditTest {
     void setUp() {
         service = new AlojamientoService(
                 repository,
+                periodoDisponibilidadRepository,
                 new RequisitosMinimosAlojamientoValidator(),
                 auditClient,
                 bookingReviewClient,
+                bookingResenaClient,
                 notificationClient
         );
     }

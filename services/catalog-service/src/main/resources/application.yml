@@ -33,3 +33,5 @@ app:
 services:
   backoffice:
     base-url: ${BACKOFFICE_SERVICE_URL:http://localhost:8084}
+  booking:
+    base-url: ${BOOKING_SERVICE_URL:http://localhost:8083}

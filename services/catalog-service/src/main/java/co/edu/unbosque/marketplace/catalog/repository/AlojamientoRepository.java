@@ -1,3 +1,4 @@
+
 package co.edu.unbosque.marketplace.catalog.repository;
 
 import co.edu.unbosque.marketplace.catalog.domain.Alojamiento;
@@ -5,14 +6,19 @@ import java.util.List;
 import java.util.Optional;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface AlojamientoRepository extends JpaRepository<Alojamiento, Long> {
+public interface AlojamientoRepository extends
+        JpaRepository<Alojamiento, Long>,
+        JpaSpecificationExecutor<Alojamiento> {
 
     List<Alojamiento> findByHostIdAndEstado(Long hostId, String estado);
     List<Alojamiento> findByEstado(String estado);
+    List<Alojamiento> findByHostId(Long hostId);
+
     List<Alojamiento> findByHostId(Long hostId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
